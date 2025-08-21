@@ -5,7 +5,7 @@ import java.util.Observable;
 
 
 /** The state of a game of 2048.
- *  @author TODO: YOUR NAME HERE
+ *  @author Shabriri
  */
 public class Model extends Observable {
     /** Current contents of the board. */
@@ -110,9 +110,26 @@ public class Model extends Observable {
         boolean changed;
         changed = false;
 
+        board.setViewingPerspective(side);
+        for(int column = 0; column < board.size(); column++){
+            changed |= handleColumn(column);
+
+        }
+        board.setViewingPerspective(Side.NORTH);
         // TODO: Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
+
+//        for (int c = 0; c < board.size(); c += 1) {
+//            for (int r = 0; r < board.size(); r += 1) {
+//                Tile t = board.tile(c, r);
+//                if (board.tile(c, r) != null) {
+//                    board.move(c, 3, t);
+//                    changed = true;
+//                    score += 7;
+//                }
+//            }
+//        }
 
         checkGameOver();
         if (changed) {
@@ -120,7 +137,83 @@ public class Model extends Observable {
         }
         return changed;
     }
+    /** 只处理“向北”倾斜的一列 c（调用前已 setViewingPerspective(side)）。 */
+    private boolean handleColumn(int c) {
+        boolean changed = false;
+        int N = board.size();
+        int target = N - 1;        // 下一次要填充/合并的位置（从顶开始）
+        int lastMergedRow = -1;    // 本轮已经合并过的行，避免二次合并
 
+        for (int r = N - 1; r >= 0; r--) {
+            Tile t = board.tile(c,r); // t为当前等待操作的tile
+
+            if(t == null){
+                continue;
+            }
+            if(r == target){
+                continue;
+            }
+
+            Tile atTarget = board.tile(c,target);// atTarget为将要移动或merge的目标tile
+
+            if(atTarget == null){
+                board.move(c,target,t);
+                changed = true;
+                // 此时不去动target，后面可能有合并的操作
+            }else if(target !=lastMergedRow && t.value() == atTarget.value()){
+                int mergeValue = atTarget.value()*2;
+                boolean move = board.move(c,target,t);
+                changed |= move;
+                this.score += mergeValue;
+                lastMergedRow = target; // 防止merge两次
+                target--;
+            }else{
+                target--;
+                if(target != r) {
+//                    boolean move = board.move(c, target, t);
+//                    changed |= move;
+                    board.move(c, target, t);
+                    changed = true;
+                }
+
+            }
+        }
+        return changed;
+    }
+
+//    private boolean handleColumn(int column){
+//        boolean changed = false;
+//        for(int row = board.size() -1 ; row >= 0; row -= 1){
+//            if(board.tile(column,row) != null){
+//                for(int r = row -1; r >=0; r -= 1){
+//                    Tile t = board.tile(column,r);
+//                    if(t != null){
+//                        if(t.value() == board.tile(column,row).value()){
+//                            // merge tile
+//                            board.move(column, row,t);
+//                            // 修改t.value()
+//                            // 加分
+//                            changed = true;
+//                            break; // move to the next tile after merge
+//                        }else{
+//                            break; // Can't merge, move to the next tile
+//                        }
+//                    }
+//                }
+//            }else{
+//                for(int r = row -1; r >=0; r -= 1){
+//                    Tile t = board.tile(column,r);
+//                    if(t != null){
+//                        board.move(column, row,t);
+//                        changed = true;
+//                        break; // move to next tile after move
+//                    }
+//                }
+//            }
+//        }
+//        return changed;
+//    }
+//
     /** Checks if the game is over and sets the gameOver variable
      *  appropriately.
      */
@@ -138,6 +231,12 @@ public class Model extends Observable {
      * */
     public static boolean emptySpaceExists(Board b) {
         // TODO: Fill in this function.
+        // return true if any of the tiles in the given board are null.
+        for(int i = 0; i < b.size(); i ++) {
+            for (int j = 0; j < b.size(); j++) {
+                if (b.tile(i, j) == null) return true;
+            }
+        }
         return false;
     }
 
@@ -148,6 +247,16 @@ public class Model extends Observable {
      */
     public static boolean maxTileExists(Board b) {
         // TODO: Fill in this function.
+        for(int i = 0; i < b.size(); i ++) {
+            for (int j = 0; j < b.size(); j++) {
+                if (b.tile(i, j) != null) {
+                    if(b.tile(i,j).value() == 2048){
+                        return true;
+                    }
+                }
+
+            }
+        }
         return false;
     }
 
@@ -159,6 +268,32 @@ public class Model extends Observable {
      */
     public static boolean atLeastOneMoveExists(Board b) {
         // TODO: Fill in this function.
+        // 1. t == null
+        // 2. t(i,j).value() == t(i, j+1).value() or t(i,j).value = t(i+1,j).value()
+        if(emptySpaceExists(b)) return true;
+        int N = b.size();
+//        for(int i = 0; i < b.size(); i++){
+//            for(int j = 0; j<b.size(); j++){
+//                if(i != b.size()){
+//                    if(b.tile(i,j).value() == b.tile(i+1,j).value()){
+//                        return true;
+//                    }
+//                }
+//                if(j != b.size()){
+//                    if(b.tile(i,j).value() == b.tile(i,j+1).value()){
+//                        return true;
+//                    }
+//                }
+//            }
+//        }
+        for(int c = 0; c <N-1; c++){
+            for(int r = 3; r>0 ; r--){
+                Tile t = b.tile(c,r);
+                if(t.value() == b.tile(c,r-1).value() || t.value() == b.tile(c+1,r).value()){
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
