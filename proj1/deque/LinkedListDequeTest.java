@@ -104,7 +104,7 @@ public class LinkedListDequeTest {
     public void emptyNullReturnTest() {
 
         System.out.println("Make sure to uncomment the lines below (and delete this print statement).");
-        /*
+
         LinkedListDeque<Integer> lld1 = new LinkedListDeque<Integer>();
 
         boolean passed1 = false;
@@ -112,7 +112,7 @@ public class LinkedListDequeTest {
         assertEquals("Should return null when removeFirst is called on an empty Deque,", null, lld1.removeFirst());
         assertEquals("Should return null when removeLast is called on an empty Deque,", null, lld1.removeLast());
 
-        */
+
     }
 
     @Test
@@ -120,7 +120,7 @@ public class LinkedListDequeTest {
     public void bigLLDequeTest() {
 
         System.out.println("Make sure to uncomment the lines below (and delete this print statement).");
-        /*
+
         LinkedListDeque<Integer> lld1 = new LinkedListDeque<Integer>();
         for (int i = 0; i < 1000000; i++) {
             lld1.addLast(i);
@@ -134,7 +134,7 @@ public class LinkedListDequeTest {
             assertEquals("Should have the same value", i, (double) lld1.removeLast(), 0.0);
         }
 
-        */
+
     }
     @Test
     // Return whether the Deque is empty.
@@ -164,6 +164,33 @@ public class LinkedListDequeTest {
         int expected = 3;
         int result = L.get(2);
         assertEquals(expected,result);
+    }
+    @Test
+    // Check if you can get the right item through the index recursively.
+    public void getRecursiveTest(){
+        // 这会创建一个 size=1，包含 12 的 Deque
+        LinkedListDeque<Integer> L = new LinkedListDeque<>(1);
+        // 在节点头部添加一个1的节点，size变为2
+        L.addFirst(2);
+        L.addLast(3);
+        L.addLast(4);
+        L.addLast(5);
+        int expected = 3;
+        int result = L.getRecursive(2);
+        assertEquals(expected,result);
+
+    }
+
+    @Test
+    public void equalsTest(){
+        LinkedListDeque<Integer> L1 = new LinkedListDeque<>(1);
+        L1.addLast(2);
+        LinkedListDeque<Integer> L2 = new LinkedListDeque<>(1);
+        L2.addLast(2);
+        LinkedListDeque<String> L3 = new LinkedListDeque<>("1");
+        L3.addLast("2");
+        assertTrue("should be true",L1.equals(L2));
+        assertFalse("should be false",L1.equals(L3));
 
     }
 }

@@ -1,5 +1,7 @@
 package deque;
 
+import java.util.Iterator;
+
 public class LinkedListDeque<T> {
     private int size;
     private StuffNode sentinel;
@@ -104,8 +106,7 @@ public class LinkedListDeque<T> {
     1 is the next item, and so forth. If no such item exists,
     returns null. Must not alter the deque! */
     public T get(int index){
-        if(index >= size) return null;
-
+        if(index >= size||size ==0 ) return null;
         StuffNode<T> p = sentinel.next;
         for(int i =0; i<index; i++){
             p = p.next;
@@ -115,10 +116,50 @@ public class LinkedListDeque<T> {
 
     }
 
-//    // Same as get, bug uses recursion
-//    public T getRecursive(int index){
+    // Same as get, bug uses recursion
+    public T getRecursive(int index){
+        if(index >= size||size ==0 ) return null;
+        StuffNode<T> p = sentinel.next;
+        return helper(p,index);
+    }
+
+    /**
+     * 这是一个helper函数，用于完成get的递归写法。
+     * @param p 指针，始终指向当前迭代的节点位置
+     * @param index 索引
+     * @return helper函数对下一个节点调用的结果
+     */
+    private T helper(StuffNode<T> p, int index) {
+        if(index == 0){
+            return p.item;
+        }
+        StuffNode<T> next = p.next;
+        return helper(next, index-1);
+    }
+
+//    // return an iterator (lecture11)
+//    public Iterator<T> iterator(){
 //
 //    }
+
+    public boolean equals(Object o){
+        if(!(o instanceof  LinkedListDeque)){
+            return false;
+        }
+        LinkedListDeque<T> otherDeque =(LinkedListDeque<T>) o;
+        if(this.size() != otherDeque.size()){
+            return false;
+        }
+        int dequeSize = this.size();
+        for(int i =0; i<dequeSize; i++){
+            T itemThis = this.get(i);
+            T itemOther = otherDeque.get(i);
+            if(!itemThis.equals(itemOther)){
+                return false;
+            }
+        }
+        return true;
+    }
 
     // main 方法可以用来简单测试
     public static void main(String[] args){
