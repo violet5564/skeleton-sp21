@@ -1,8 +1,12 @@
 package deque;
 
+import net.sf.saxon.functions.ConstantFunction;
+import org.xml.sax.ext.Locator2;
+
+import java.util.HashSet;
 import java.util.Iterator;
 
-public class LinkedListDeque<T> {
+public class LinkedListDeque<T> implements Deque<T>,Iterable<T> {
     private int size;
     private StuffNode sentinel;
 
@@ -38,6 +42,7 @@ public class LinkedListDeque<T> {
 
 
     //Adds an item of type T to the front of the deque.
+    @Override
     public void addFirst(T item){
         StuffNode<T> addNode = new StuffNode<>(sentinel, item , sentinel.next);
         sentinel.next.prev = addNode;
@@ -47,6 +52,7 @@ public class LinkedListDeque<T> {
     }
 
     //Adds an item of type T to the back of the deque.
+    @Override
     public void addLast(T item){
         StuffNode<T> addNode = new StuffNode<>(sentinel.prev, item, sentinel);
         sentinel.prev.next  = addNode;
@@ -55,17 +61,20 @@ public class LinkedListDeque<T> {
     }
 
     // Returns true if deque is empty, false otherwise.
+    @Override
     public boolean isEmpty(){
         return size == 0;
     }
 
     // Return the size of the Deque.
+    @Override
     public int size(){
         return size;
     }
 
     //Prints the items in the deque from first to last, separated by a space.
     // Once all the items have been printed, print out a new line.
+    @Override
     public void printDeque(){
         StuffNode<T> p = sentinel.next;
         while(p != sentinel){
@@ -77,6 +86,7 @@ public class LinkedListDeque<T> {
 
     //Removes and returns the item at the front of the deque.
     //If no such item exists, returns null.
+    @Override
     public T removeFirst(){
         if(size ==0){
             return null;
@@ -91,6 +101,7 @@ public class LinkedListDeque<T> {
 
     //Removes and returns the item at the back of the deque.
     //If no such item exists, returns null.
+    @Override
     public T removeLast(){
         if(size == 0) return null;
 
@@ -105,6 +116,7 @@ public class LinkedListDeque<T> {
     /*Gets the item at the given index, where 0 is the front,
     1 is the next item, and so forth. If no such item exists,
     returns null. Must not alter the deque! */
+    @Override
     public T get(int index){
         if(index >= size||size ==0 ) return null;
         StuffNode<T> p = sentinel.next;
@@ -137,11 +149,30 @@ public class LinkedListDeque<T> {
         return helper(next, index-1);
     }
 
-//    // return an iterator (lecture11)
-//    public Iterator<T> iterator(){
-//
-//    }
+    // return an iterator (lecture11)
+    @Override
+    public Iterator<T> iterator(){
+        return new lldIterator();
+    }
 
+    private class lldIterator implements Iterator<T>{
+        private StuffNode<T> P;
+        public lldIterator(){
+            P = sentinel.next;
+        }
+        public boolean hasNext(){
+            if(P == sentinel){
+                return false;
+            }
+            return true;
+        }
+        public T next(){
+            T returnItem = P.item;
+            P = P.next;
+            return returnItem;
+        }
+    }
+    @Override
     public boolean equals(Object o){
         if(!(o instanceof  LinkedListDeque)){
             return false;
@@ -173,13 +204,21 @@ public class LinkedListDeque<T> {
         L2.addLast(3);
         L2.addLast(3);
         L2.addLast(3);
-        L2.printDeque();
-        System.out.println(L2.removeLast());
-        L2.printDeque();
+//        L2.printDeque();
+//        System.out.println(L2.removeLast());
+//        L2.printDeque();
 //        System.out.println("L1 size: " + L1.size); // 应该输出 0
 //        System.out.println("L2 size: " + L2.size); // 应该输出 1
 //        System.out.println("L2 first item: " + L2.sentinel.next.item); // 应该输出 12
 //        System.out.println("Is L2 circular? " + (L2.sentinel.next.next == L2.sentinel)); // 应该输出 true
+//        Iterator<Integer> aseer = L2.iterator();
+//        while(aseer.hasNext()){
+//            int i = aseer.next();
+//            System.out.println(i);
+//        }
+        for(int i :L2){
+            System.out.println(i);
+        }
     }
 
 }
