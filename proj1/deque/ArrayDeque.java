@@ -10,6 +10,7 @@ public class ArrayDeque<T> implements Deque<T>,Iterable<T>{
     private int size;
     private int nextFirst = 4;
     private int nextLast = 5;
+    private double usage = 0.25;
     //create a empty ArrayDeque
     public ArrayDeque() {
         items = (T [])  new Object[8];
@@ -74,6 +75,7 @@ public class ArrayDeque<T> implements Deque<T>,Iterable<T>{
 
     //  Removes and returns the item at
     //  the front of the deque. If no such item exists, return null.
+    // remove之后利用率低于25%要resize压缩空间（100一下不用压缩）
     @Override
     public T removeFirst(){
         if(size == 0){
@@ -90,11 +92,16 @@ public class ArrayDeque<T> implements Deque<T>,Iterable<T>{
             nextFirst = nextFirst + 1;
         }
         size -= 1;
+        // 检测并进行压缩操作
+        if(items.length >100 && ((double)size/items.length) < usage){
+            resize(items.length/2);
+        }
         return result;
     }
 
     // Removes and returns the item at the back of the deque.
     // If no such item exists, returnn null
+    // 考虑空间利用率；当items.length =200, size<50的时候，remove之后要调用resizing
     @Override
     public T removeLast(){
         if(size == 0){
@@ -112,6 +119,9 @@ public class ArrayDeque<T> implements Deque<T>,Iterable<T>{
             nextLast = nextLast - 1;
         }
         size -= 1;
+        if(items.length >100 && ((double)size/items.length) < usage){
+            resize(items.length/2);
+        }
         return result;
     }
 
@@ -142,29 +152,48 @@ public class ArrayDeque<T> implements Deque<T>,Iterable<T>{
      * @param capacity 扩容目标大小
      */
     private void resize(int capacity){
+        // 参数检查
         if (size > capacity) {
-                throw new IllegalArgumentException("容量不能小于当前元素数量！当前 size = " + size + ", 但 capacity = " + capacity);
+            throw new IllegalArgumentException("容量不能小于当前元素数量！当前 size = " + size + ", 但 capacity = " + capacity);
+        }
+        if(capacity == items.length){
+            throw new IllegalArgumentException("capacity=items.length,无意义的resize");
         }
         T[] a =(T[])  new Object[capacity];
         // 若需要resize是扩容：
         if(capacity > items.length) {
-            System.arraycopy(items, 0, a, 0, nextLast); // 头尾断开，复制左边的尾部
-            int lenRight = items.length - nextLast;
-            int startPoint = capacity - lenRight;
-            System.arraycopy(items, nextLast, a, startPoint, lenRight); // 复制右边的头部 len = size - nextFirst  strat_point = capacity - len
-            items = a; // 更新新的arrayDeque
-            // 更新nextFirst
-            nextFirst = nextFirst + size;
-        }else{
-            // 当ArrayDeque两边为空
-            if(nextFirst>nextLast){
+            if (size != items.length) {
+                throw new IllegalArgumentException("扩容时items应该是慢的"+"size:"+size+" item.length="+items.length);
+            }
+            // 当deque首尾在array中间相接
+            if (nextLast > nextFirst) {
+                System.arraycopy(items, 0, a, 0, nextLast); // 头尾断开，复制左边的尾部
+                int lenRight = items.length - nextLast;
+                int startPoint = capacity - lenRight;
+                System.arraycopy(items, nextLast, a, startPoint, lenRight); // 复制右边的头部 len = size - nextFirst  strat_point = capacity - len
+                items = a; // 更新新的arrayDeque
+                // 更新nextFirst
+                nextFirst = nextFirst + size;
+            }
+            // 当deque和array首尾位置相同
+            if (nextFirst < nextLast) {
+                System.arraycopy(items,0,a,0,size);
+                items = a;
+                nextFirst = capacity - 1;
+                nextLast = size;
+            }
+        }
+        // 若resize是缩容
+        if(capacity < items.length){
+            // 当空白在items两边/not wrapped around
+            if(nextFirst<nextLast){
                 System.arraycopy(items,nextFirst+1,a,0,size);
                 items = a;
                 nextFirst = capacity - 1;
                 nextLast = size;
-            }else{//当ArrayDeque 中间为空
+            }else {//当空白部分在items中间或者一边/wrapped around
                 System.arraycopy(items, 0, a, 0, nextLast); // 头尾断开，复制左边的尾部
-                int lenRight = capacity - nextFirst-1;
+                int lenRight = items.length - nextFirst-1; //获得右边元素的个数
                 int startPoint = (nextFirst + 1) - size;
                 System.arraycopy(items, nextFirst + 1, a, startPoint, lenRight); // 复制右边的头部 len = size - nextFirst  strat_point = capacity - len
                 items = a; // 更新新的arrayDeque
@@ -172,9 +201,6 @@ public class ArrayDeque<T> implements Deque<T>,Iterable<T>{
                 nextFirst = nextFirst - size;
             }
         }
-
-
-
     }
 
     @Override
@@ -231,11 +257,14 @@ public class ArrayDeque<T> implements Deque<T>,Iterable<T>{
         A1.addLast("h");
         A1.addLast("i");
         A1.addLast("j");
-        A1.printDeque();
+        for(int i =0 ; i <250; i++){
+            A1.addLast("X");
+        }
+//        A1.printDeque();
 //        for(String s : A1){
 //            System.out.println(s);
 //        }
-        while (A1.iterator().hasNext()){
+        for(int i =0; i <250; i++){
             A1.removeFirst();
         }
 
