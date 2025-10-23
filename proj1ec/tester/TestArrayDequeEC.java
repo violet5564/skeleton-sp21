@@ -70,7 +70,7 @@ public class TestArrayDequeEC {
                     // record operation
                     operationSequence.add("removeLast(" + i + ")");
                     // construct String
-                    String message = String.join("\n", operationSequence)
+                    String message = String.join("\n", operationSequence);
                     assertEquals(message, expected, actual);
 //                    assertEquals("Actual number" +actual+"not equal to"+expected,expected,actual);
 //                    System.out.println(sad2.removeLast()+" "+sad1.removeLast());
