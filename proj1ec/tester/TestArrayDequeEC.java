@@ -49,14 +49,16 @@ public class TestArrayDequeEC {
                 if (!sad1.isEmpty() && !sad2.isEmpty()){
                     Integer actual = sad1.removeFirst();
                     Integer expected = sad2.removeFirst();
-                    assertEquals("Actual number" +actual+"not equal to"+expected,expected,actual);
+                    assertEquals(expected,expected,actual);
+//                    assertEquals("Actual number" +actual+"not equal to"+expected,expected,actual);
 //                    System.out.println(sad2.removeFirst()+" "+sad1.removeFirst());
                 }
             }else{
                 if (!sad1.isEmpty() && !sad2.isEmpty()){
                     Integer actual = sad1.removeLast();
                     Integer expected = sad2.removeLast();
-                    assertEquals("Actual number" +actual+"not equal to"+expected,expected,actual);
+                    assertEquals(expected,actual);
+//                    assertEquals("Actual number" +actual+"not equal to"+expected,expected,actual);
 //                    System.out.println(sad2.removeLast()+" "+sad1.removeLast());
                 }
             }
