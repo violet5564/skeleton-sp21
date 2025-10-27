@@ -189,8 +189,21 @@ public class LinkedListDequeTest {
         L2.addLast(2);
         LinkedListDeque<String> L3 = new LinkedListDeque<>("1");
         L3.addLast("2");
-        assertTrue("should be true",L1.equals(L2));
-        assertFalse("should be false",L1.equals(L3));
+        L1.addLast(3);
+        L1.addLast(4);
+        L1.addLast(5);
+        L1.addLast(6);
+        ArrayDeque<Integer> A1 = new ArrayDeque<>();
+        A1.addLast(1);
+        A1.addLast(2);
+        A1.addLast(3);
+        A1.addLast(4);
+        A1.addLast(5);
+        A1.addLast(6);
+//        assertTrue("should be true",L1.equals(L2));
+//        assertFalse("should be false",L1.equals(L3));
+        assertTrue("should be true", A1.equals(L1));
+        assertTrue("should be true", L1.equals(A1));
 
     }
 }

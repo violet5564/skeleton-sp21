@@ -2,7 +2,7 @@ package deque;
 
 import java.util.Iterator;
 
-public class ArrayDeque<T> implements Deque<T>,Iterable<T>{
+public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     private T[] items;
     private int size;
     private int nextFirst = 4;
@@ -17,14 +17,14 @@ public class ArrayDeque<T> implements Deque<T>,Iterable<T>{
 
     //Adds an item of type T to the front of the deque.
     @Override
-    public void addFirst(T item){
-        if(size == items.length){
-            resize(size*2);
+    public void addFirst(T item) {
+        if (size == items.length) {
+            resize(size * 2);
         }
         items[nextFirst] = item;
-        if(nextFirst>0){
+        if (nextFirst > 0) {
             nextFirst -= 1;
-        }else{
+        } else {
             nextFirst = items.length - 1;
         }
         size += 1;
@@ -32,13 +32,13 @@ public class ArrayDeque<T> implements Deque<T>,Iterable<T>{
     //Adds an item of type T to the back of the deque.
     @Override
     public void addLast(T item) {
-        if(size == items.length){
-            resize(size*2);
+        if (size == items.length) {
+            resize(size * 2);
         }
         items[nextLast] = item;
-        if(nextLast < items.length-1) {
+        if (nextLast < items.length - 1) {
             nextLast += 1;
-        }else{
+        } else {
             nextLast = 0;
         }
         size += 1;
@@ -60,9 +60,9 @@ public class ArrayDeque<T> implements Deque<T>,Iterable<T>{
     // 从first遍历到null或次数达到size；
     // 如果一直没到null，中间加个折返到0的操做
     @Override
-    public void printDeque(){
-        for(int i = 0; i < size; i++){
-            if(get(i) == null){
+    public void printDeque() {
+        for (int i = 0; i < size; i++) {
+            if (get(i) == null) {
                 break;
             }
             T result = get(i);
@@ -75,24 +75,24 @@ public class ArrayDeque<T> implements Deque<T>,Iterable<T>{
     //  the front of the deque. If no such item exists, return null.
     // remove之后利用率低于25%要resize压缩空间（100一下不用压缩）
     @Override
-    public T removeFirst(){
-        if(size == 0){
+    public T removeFirst() {
+        if (size == 0) {
             return null;
         }
-        T result ;
-        if(nextFirst == items.length -1){
+        T result;
+        if(nextFirst == items.length - 1) {
             result = items[0];
             items[0] = null;
             nextFirst = 0;
-        }else{
+        } else {
             result =  items[nextFirst + 1];
             items[nextFirst + 1] = null;
             nextFirst = nextFirst + 1;
         }
         size -= 1;
         // 检测并进行压缩操作
-        if(items.length >16 && ((double)size/items.length) < usageLimit){
-            resize(items.length/2);
+        if (items.length >16 && ((double)size/items.length) < usageLimit) {
+            resize(items.length / 2);
         }
         return result;
     }
@@ -101,24 +101,24 @@ public class ArrayDeque<T> implements Deque<T>,Iterable<T>{
     // If no such item exists, returnn null
     // 考虑空间利用率；当items.length =200, size<50的时候，remove之后要调用resizing
     @Override
-    public T removeLast(){
-        if(size == 0){
+    public T removeLast() {
+        if (size == 0) {
             return null;
         }
         T result;
         // 处理特殊情况尾部在items[0]
-        if(nextLast == 0){
+        if (nextLast == 0) {
             result = items[items.length - 1];
-            items[items.length-1] = null;
+            items[items.length - 1] = null;
             nextLast = items.length - 1;
-        }else{
+        } else {
             result = items[nextLast - 1];
             items[nextLast - 1] = null;
             nextLast = nextLast - 1;
         }
         size -= 1;
-        if(items.length >16 && ((double)size/items.length) < usageLimit){
-            resize(items.length/2);
+        if (items.length > 16 && ((double)size / items.length) < usageLimit) {
+            resize(items.length / 2);
         }
         return result;
     }
@@ -132,13 +132,13 @@ public class ArrayDeque<T> implements Deque<T>,Iterable<T>{
 //    }
     @Override
     public T get(int i) {
-        if(i>=size || size == 0){
+        if (i >= size || size == 0) {
             return null;
         }
         int index = nextFirst + i + 1;
-        if(index < items.length) {
+        if (index < items.length) {
             return items[index];
-        }else{
+        } else {
             return items[index - items.length];
         }
 
@@ -149,23 +149,23 @@ public class ArrayDeque<T> implements Deque<T>,Iterable<T>{
      * 数据结构的size扩大到capacity大小
      * @param capacity 扩容目标大小
      */
-    private void resize(int capacity){
-        T[] a =(T[]) new Object[capacity];
+    private void resize(int capacity) {
+        T[] a = (T[]) new Object[capacity];
         // 先计算头部的部分
         int firstPartStart = (nextFirst + 1) % items.length;
         int firstPartLen = items.length - firstPartStart;
         // 如果size<第一部分长度，说明没有环绕，右边长度就是size大小
-        if(size < firstPartLen){
+        if (size < firstPartLen) {
             firstPartLen = size;
         }
         //复制第一部分
-        System.arraycopy(items, firstPartStart,a,0, firstPartLen);
+        System.arraycopy(items, firstPartStart, a, 0, firstPartLen);
 
         //在计算尾部
         int secondPartLen = size - firstPartLen;
         // 复制第二部分
-        if(secondPartLen > 0){
-            System.arraycopy(items,0,a,firstPartLen,secondPartLen);
+        if (secondPartLen > 0) {
+            System.arraycopy(items, 0, a, firstPartLen, secondPartLen);
         }
 
         // 更新数组
@@ -175,22 +175,18 @@ public class ArrayDeque<T> implements Deque<T>,Iterable<T>{
     }
 
     @Override
-    public Iterator<T> iterator(){
-        return new adIterator();
-    }
+    public Iterator<T> iterator() { return new adIterator(); }
 
-    private class adIterator implements Iterator<T>{
+    private class adIterator implements Iterator<T> {
         private int index;
-        public adIterator(){
-            index = 0; // 初始化迭代位置
-        }
-        public boolean hasNext(){
-            if(index < size){
+        public adIterator() { index = 0; }
+        public boolean hasNext() {
+            if (index < size) {
                 return true;
             }
             return false;
         }
-        public T next(){
+        public T next() {
             T returnItem = get(index);
             index += 1;
             return returnItem;
@@ -198,18 +194,26 @@ public class ArrayDeque<T> implements Deque<T>,Iterable<T>{
     }
 
     @Override
-    public boolean equals(Object o){
-        if(!(o instanceof ArrayDeque)){
+    public boolean equals(Object o) {
+        // 检查是不是自己
+        if (this == o) {
+            return true;
+        }
+        // 检查是不是Deque类型
+        if (!(o instanceof Deque)) {
             return false;
         }
-        ArrayDeque<T> otherDeque = (ArrayDeque<T>) o;
-        if(this.size != otherDeque.size){
+        // 将o转换成Deque类型
+        Deque<T> otherDeque = (Deque<T>) o;
+
+        if (this.size() != otherDeque.size()) {
             return false;
         }
-        for(int i = 0; i < this.size; i++){
+        int dequeSize = this.size();
+        for (int i = 0; i < dequeSize; i++) {
             T itemThis = this.get(i);
             T itemOther = otherDeque.get(i);
-            if(!itemThis.equals(itemOther)){
+            if (!itemThis.equals(itemOther)) {
                 return false;
             }
         }
