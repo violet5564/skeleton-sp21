@@ -25,7 +25,7 @@ public class ArrayDeque<T> implements Deque<T>,Iterable<T>{
         if(nextFirst>0){
             nextFirst -= 1;
         }else{
-            nextFirst = size-1;
+            nextFirst = items.length - 1;
         }
         size += 1;
     }
@@ -44,11 +44,11 @@ public class ArrayDeque<T> implements Deque<T>,Iterable<T>{
         size += 1;
     }
 
-    // Returns true if deque is empty, false otherwise.
-    @Override
-    public boolean isEmpty(){
-        return size == 0;
-    }
+//    // Returns true if deque is empty, false otherwise.
+//    @Override
+//    public boolean isEmpty(){
+//        return size == 0;
+//    }
 
     // Return the size of the Deque.
     @Override
@@ -91,7 +91,7 @@ public class ArrayDeque<T> implements Deque<T>,Iterable<T>{
         }
         size -= 1;
         // 检测并进行压缩操作
-        if(items.length >100 && ((double)size/items.length) < usageLimit){
+        if(items.length >16 && ((double)size/items.length) < usageLimit){
             resize(items.length/2);
         }
         return result;
@@ -117,7 +117,7 @@ public class ArrayDeque<T> implements Deque<T>,Iterable<T>{
             nextLast = nextLast - 1;
         }
         size -= 1;
-        if(items.length >100 && ((double)size/items.length) < usageLimit){
+        if(items.length >16 && ((double)size/items.length) < usageLimit){
             resize(items.length/2);
         }
         return result;
