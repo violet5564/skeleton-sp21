@@ -67,11 +67,5 @@ public class GuitarString {
         // TODO: Return the correct thing.
         return buffer.get(0);
     }
-    public static void main(String[] args){
-        GuitarString gs = new GuitarString(1000);
-        gs.pluck();
-        gs.tic();
-
-    }
 }
     // TODO: Remove all comments that say TODO when you're done.

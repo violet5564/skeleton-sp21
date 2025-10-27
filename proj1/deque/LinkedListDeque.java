@@ -19,16 +19,16 @@ public class LinkedListDeque<T> implements Deque<T>,Iterable<T> {
         }
     }
 
-    // Creat normal a LLD, record it's size.
-    public  LinkedListDeque(T x){
-        size = 1;
-        sentinel = new StuffNode<>(null,null,null);
-        // 1. 一次性创建好新节点，并直接将其 prev 和 next 都设置为 sentinel。
-        StuffNode<T> newNode = new StuffNode<>(sentinel, x, sentinel);
-        // 2. 更新 sentinel 的指针，让它们都指向这个新节点。
-        sentinel.next = newNode;
-        sentinel.prev = newNode;
-    }
+//    // Creat normal a LLD, record it's size.
+//    public  LinkedListDeque(T x){
+//        size = 1;
+//        sentinel = new StuffNode<>(null,null,null);
+//        // 1. 一次性创建好新节点，并直接将其 prev 和 next 都设置为 sentinel。
+//        StuffNode<T> newNode = new StuffNode<>(sentinel, x, sentinel);
+//        // 2. 更新 sentinel 的指针，让它们都指向这个新节点。
+//        sentinel.next = newNode;
+//        sentinel.prev = newNode;
+//    }
 
     // Creat a null LLD
     public LinkedListDeque(){
@@ -188,35 +188,6 @@ public class LinkedListDeque<T> implements Deque<T>,Iterable<T> {
             }
         }
         return true;
-    }
-
-    // main 方法可以用来简单测试
-    public static void main(String[] args){
-        // 这会创建一个 size=0 的 Deque
-        LinkedListDeque<String> L1 = new LinkedListDeque<>();
-        L1.printDeque();
-        // 这会创建一个 size=1，包含 12 的 Deque
-        LinkedListDeque<Integer> L2 = new LinkedListDeque<>(2);
-        // 在节点头部添加一个1的节点，size变为2
-        L2.addFirst(1);
-        L2.addLast(3);
-        L2.addLast(3);
-        L2.addLast(3);
-//        L2.printDeque();
-//        System.out.println(L2.removeLast());
-//        L2.printDeque();
-//        System.out.println("L1 size: " + L1.size); // 应该输出 0
-//        System.out.println("L2 size: " + L2.size); // 应该输出 1
-//        System.out.println("L2 first item: " + L2.sentinel.next.item); // 应该输出 12
-//        System.out.println("Is L2 circular? " + (L2.sentinel.next.next == L2.sentinel)); // 应该输出 true
-//        Iterator<Integer> aseer = L2.iterator();
-//        while(aseer.hasNext()){
-//            int i = aseer.next();
-//            System.out.println(i);
-//        }
-        for(int i :L2){
-            System.out.println(i);
-        }
     }
 
 }

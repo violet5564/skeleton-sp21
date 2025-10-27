@@ -11,7 +11,7 @@ public class ArrayDeque<T> implements Deque<T>,Iterable<T>{
 
     //create a empty ArrayDeque
     public ArrayDeque() {
-        items = (T [])  new Object[8];
+        items = (T[])  new Object[8];
         size = 0;
     }
 
@@ -215,33 +215,5 @@ public class ArrayDeque<T> implements Deque<T>,Iterable<T>{
         }
         return true;
     }
-    //return the usage of ArrayDeque
-    public double getUsage(){
-        return (double) size /items.length;
-    }
 
-    public static void main(String[] args){
-        ArrayDeque<String> A1 = new ArrayDeque<>();
-        A1.addLast("a");
-        A1.addLast("b");
-        A1.addFirst("c");
-        A1.addLast("d");
-        A1.addLast("e");
-        A1.addFirst("f");
-        A1.addLast("g");
-        A1.addLast("h");
-        A1.addLast("i");
-        A1.addLast("j");
-        for(int i =0 ; i <250; i++){
-            A1.addLast("X");
-        }
-//        A1.printDeque();
-//        for(String s : A1){
-//            System.out.println(s);
-//        }
-        for(int i =0; i <250; i++){
-            A1.removeFirst();
-        }
-
-    }
 }
