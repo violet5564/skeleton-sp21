@@ -1,7 +1,5 @@
 package deque;
 
-import net.sf.saxon.functions.ConstantFunction;
-import org.xml.sax.ext.Locator2;
 
 import java.util.HashSet;
 import java.util.Iterator;
