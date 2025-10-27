@@ -19,16 +19,16 @@ public class LinkedListDeque<T> implements Deque<T>,Iterable<T> {
         }
     }
 
-    // Creat normal a LLD, record it's size.
-    public  LinkedListDeque(T x){
-        size = 1;
-        sentinel = new StuffNode<>(null,null,null);
-        // 1. 一次性创建好新节点，并直接将其 prev 和 next 都设置为 sentinel。
-        StuffNode<T> newNode = new StuffNode<>(sentinel, x, sentinel);
-        // 2. 更新 sentinel 的指针，让它们都指向这个新节点。
-        sentinel.next = newNode;
-        sentinel.prev = newNode;
-    }
+//    // Creat normal a LLD, record it's size.
+//    public  LinkedListDeque(T x){
+//        size = 1;
+//        sentinel = new StuffNode<>(null,null,null);
+//        // 1. 一次性创建好新节点，并直接将其 prev 和 next 都设置为 sentinel。
+//        StuffNode<T> newNode = new StuffNode<>(sentinel, x, sentinel);
+//        // 2. 更新 sentinel 的指针，让它们都指向这个新节点。
+//        sentinel.next = newNode;
+//        sentinel.prev = newNode;
+//    }
 
     // Creat a null LLD
     public LinkedListDeque(){
@@ -192,19 +192,22 @@ public class LinkedListDeque<T> implements Deque<T>,Iterable<T> {
 
     @Override
     public boolean equals(Object o) {
-        Deque<T> otherDeque;
-        if (o instanceof LinkedListDeque) {
-            otherDeque = (LinkedListDeque<T>) o;
-        } else if (o instanceof  ArrayDeque) {
-            otherDeque = (ArrayDeque<T>) o;
-        } else {
+        // 检查是不是自己
+        if (this == o) {
+            return true;
+        }
+        // 检查是不是Deque类型
+        if (!(o instanceof Deque)) {
             return false;
         }
+        // 将o转换成Deque类型
+        Deque<T> otherDeque = (Deque<T>) o;
+
         if (this.size() != otherDeque.size()) {
             return false;
         }
         int dequeSize = this.size();
-        for (int i =0; i<dequeSize; i++) {
+        for (int i = 0; i < dequeSize; i++) {
             T itemThis = this.get(i);
             T itemOther = otherDeque.get(i);
             if (!itemThis.equals(itemOther)) {
