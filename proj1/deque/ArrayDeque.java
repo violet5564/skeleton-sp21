@@ -1,6 +1,7 @@
 package deque;
 
 import java.util.Iterator;
+import java.util.Objects;
 
 public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     private T[] items;
@@ -80,7 +81,7 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
             return null;
         }
         T result;
-        if(nextFirst == items.length - 1) {
+        if (nextFirst == items.length - 1) {
             result = items[0];
             items[0] = null;
             nextFirst = 0;
@@ -91,7 +92,7 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
         }
         size -= 1;
         // 检测并进行压缩操作
-        if (items.length >16 && ((double)size/items.length) < usageLimit) {
+        if (items.length > 16 && ((double) size / items.length) < usageLimit) {
             resize(items.length / 2);
         }
         return result;
@@ -117,7 +118,7 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
             nextLast = nextLast - 1;
         }
         size -= 1;
-        if (items.length > 16 && ((double)size / items.length) < usageLimit) {
+        if (items.length > 16 && ((double) size / items.length) < usageLimit) {
             resize(items.length / 2);
         }
         return result;
@@ -175,11 +176,15 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     }
 
     @Override
-    public Iterator<T> iterator() { return new adIterator(); }
+    public Iterator<T> iterator() {
+        return new AdIterator();
+    }
 
-    private class adIterator implements Iterator<T> {
+    private class AdIterator implements Iterator<T> {
         private int index;
-        public adIterator() { index = 0; }
+        AdIterator() {
+            index = 0;
+        }
         public boolean hasNext() {
             if (index < size) {
                 return true;
@@ -204,16 +209,16 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
             return false;
         }
         // 将o转换成Deque类型
-        Deque<T> otherDeque = (Deque<T>) o;
+        Deque<?> otherDeque = (Deque<?>) o;
 
         if (this.size() != otherDeque.size()) {
             return false;
         }
         int dequeSize = this.size();
         for (int i = 0; i < dequeSize; i++) {
-            T itemThis = this.get(i);
-            T itemOther = otherDeque.get(i);
-            if (!itemThis.equals(itemOther)) {
+            Object itemThis = this.get(i);
+            Object itemOther = otherDeque.get(i);
+            if (!Objects.equals(itemThis, itemOther)) {
                 return false;
             }
         }
