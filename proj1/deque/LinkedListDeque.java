@@ -5,7 +5,7 @@ package deque;
 import java.util.Iterator;
 import java.util.Objects;
 
-public class LinkedListDeque<T> implements Deque<T>,Iterable<T> {
+public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
     private int size;
     private StuffNode sentinel;
 
@@ -87,7 +87,7 @@ public class LinkedListDeque<T> implements Deque<T>,Iterable<T> {
     //If no such item exists, returns null.
     @Override
     public T removeFirst() {
-        if (size ==0) {
+        if (size == 0) {
             return null;
         }
         StuffNode<T> firstNode = sentinel.next;
@@ -119,11 +119,11 @@ public class LinkedListDeque<T> implements Deque<T>,Iterable<T> {
     returns null. Must not alter the deque! */
     @Override
     public T get(int index) {
-        if(index >= size || size == 0 ) {
+        if (index >= size || size == 0 ) {
             return null;
         }
         StuffNode<T> p = sentinel.next;
-        for (int i =0; i < index; i++) {
+        for (int i = 0; i < index; i++) {
             p = p.next;
         }
         T itemToReturn = p.item;
@@ -133,7 +133,7 @@ public class LinkedListDeque<T> implements Deque<T>,Iterable<T> {
 
     // Same as get, bug uses recursion
     public T getRecursive(int index) {
-        if (index >= size || size == 0 ) {
+        if (index >= size || size == 0) {
             return null;
         }
         StuffNode<T> p = sentinel.next;

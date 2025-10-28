@@ -5,7 +5,7 @@ import edu.princeton.cs.algs4.StdDraw;
 
 public class GuitarHero {
     String keyboard = "q2we4r5ty7u8i9op-[=zxdcfvgbnjmk,.;/' ";
-    double[] GuitarString = new double[37];
+    double[] guitarString = new double[37];
 
 //
 //    int j = 1;
