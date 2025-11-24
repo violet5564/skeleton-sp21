@@ -6,7 +6,7 @@ import java.io.IOException;
 import static capers.Utils.*;
 
 /** A repository for Capers 
- * @author TODO
+ * @author Shabriri
  * The structure of a Capers Repository is as follows:
  *
  * .capers/ -- top level folder for all persistent data in your lab12 folder
@@ -20,9 +20,12 @@ public class CapersRepository {
     static final File CWD = new File(System.getProperty("user.dir"));
 
     /** Main metadata folder. */
-    static final File CAPERS_FOLDER = null; // TODO Hint: look at the `join`
+    static final File CAPERS_FOLDER = join(CWD, ".capers"); // TODO Hint: look at the `join`
                                             //      function in Utils
-
+    //create Dogs_folder
+    static final File DOG_FOLDER = join(CAPERS_FOLDER, "dogs");
+    // create Story_file
+    static final File STORY_FILE = join(CAPERS_FOLDER, "story");
     /**
      * Does required filesystem operations to allow for persistence.
      * (creates any necessary folders or files)
@@ -34,19 +37,20 @@ public class CapersRepository {
      */
     public static void setupPersistence() {
         //initialize .capers
-        File dogs = new File(".capers/dogs");
-        if (dogs.mkdir()) {
-            System.out.println("Successfully make dogs");
+        if (!CAPERS_FOLDER.exists()) {
+            CAPERS_FOLDER.mkdir();
         }
-        try {
-            File story = new File(".capers/story.txt");
-            if (story.createNewFile()) {
-                System.out.println("文件创建成功！");
-            } else {
-                System.out.println("文件已存在。");
+        // create dog
+        if (!DOG_FOLDER.exists()) {
+            DOG_FOLDER.mkdir();
+        }
+        // create Story
+        if (!STORY_FILE.exists()) {
+            try {
+                STORY_FILE.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
 
     }
@@ -58,7 +62,14 @@ public class CapersRepository {
      */
     public static void writeStory(String text) {
         // TODO
-
+        String oldStroy = "";
+        if (STORY_FILE.exists()) {
+            oldStroy = readContentsAsString(STORY_FILE);
+        }
+        String newStory = oldStroy + text + "\n";
+        writeContents(STORY_FILE, newStory);
+        // prints out the current story.
+        System.out.println(newStory);
     }
 
     /**
@@ -68,6 +79,12 @@ public class CapersRepository {
      */
     public static void makeDog(String name, String breed, int age) {
         // TODO
+        // 创建并写入dog对象
+        Dog newDog = new Dog(name, breed, age);
+        newDog.saveDog();
+
+        // prints out the dog.
+        System.out.println(newDog.toString());
     }
 
     /**
@@ -78,5 +95,13 @@ public class CapersRepository {
      */
     public static void celebrateBirthday(String name) {
         // TODO
+        //1. get the dog object
+        Dog d = Dog.fromFile(name);
+        if (d == null) {
+            System.out.println("未找到" + name);
+            return;
+        }
+        d.haveBirthday();
+        d.saveDog();
     }
 }

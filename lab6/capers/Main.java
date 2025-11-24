@@ -1,14 +1,16 @@
 package capers;
 
+import javax.xml.namespace.QName;
 import java.io.File;
 import java.util.Arrays;
 
 import static capers.Utils.*;
 
 /** Canine Capers: A Gitlet Prelude.
- * @author TODO
+ * @author Shabriri
 */
 public class Main {
+    // This should consist mostly of calling other methods from CapersRepository.
     /**
      * Runs one of three commands:
      * story [text] -- Appends "text" + a newline to a story file in the
@@ -41,7 +43,7 @@ public class Main {
         if (args.length == 0) {
             Utils.exitWithError("Must have at least one argument");
         }
-        System.out.println("args: " + Arrays.toString(args));
+//        System.out.println("args: " + Arrays.toString(args));
         CapersRepository.setupPersistence();
         String text;
         switch (args[0]) {
@@ -54,10 +56,16 @@ public class Main {
         case "dog":
             validateNumArgs("dog", args, 4);
             // TODO: make a dog
+            String name = args[1];
+            String  breed = args[2];
+            int age = Integer.parseInt(args[3]);
+            CapersRepository.makeDog(name, breed, age);
             break;
         case "birthday":
             validateNumArgs("birthday", args, 2);
             // TODO: celebrate this dog's birthday
+            String dogName = args[1];
+            CapersRepository.celebrateBirthday(dogName);
             break;
         default:
             exitWithError(String.format("Unknown command: %s", args[0]));
