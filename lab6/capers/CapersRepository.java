@@ -1,6 +1,8 @@
 package capers;
 
 import java.io.File;
+import java.io.IOException;
+
 import static capers.Utils.*;
 
 /** A repository for Capers 
@@ -31,7 +33,22 @@ public class CapersRepository {
      *    - story -- file containing the current story
      */
     public static void setupPersistence() {
-        // TODO
+        //initialize .capers
+        File dogs = new File(".capers/dogs");
+        if (dogs.mkdir()) {
+            System.out.println("Successfully make dogs");
+        }
+        try {
+            File story = new File(".capers/story.txt");
+            if (story.createNewFile()) {
+                System.out.println("文件创建成功！");
+            } else {
+                System.out.println("文件已存在。");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
     /**
@@ -41,6 +58,7 @@ public class CapersRepository {
      */
     public static void writeStory(String text) {
         // TODO
+
     }
 
     /**
