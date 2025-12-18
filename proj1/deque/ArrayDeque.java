@@ -25,7 +25,7 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
         items[nextFirst] = item;
         if (nextFirst > 0) {
             nextFirst -= 1;
-        } else {
+        } else {//如果nextFirst为0，指针回到末尾
             nextFirst = items.length - 1;
         }
         size += 1;
@@ -136,12 +136,14 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
         if (i >= size || size == 0) {
             return null;
         }
-        int index = nextFirst + i + 1;
-        if (index < items.length) {
-            return items[index];
-        } else {
-            return items[index - items.length];
-        }
+//        int index = nextFirst + i + 1;
+//        if (index < items.length) {
+//            return items[index];
+//        } else {
+//            return items[index - items.length];
+//        }
+        int physicalIndex = (nextFirst + i + 1) % items.length;
+        return items[physicalIndex];
 
     }
 

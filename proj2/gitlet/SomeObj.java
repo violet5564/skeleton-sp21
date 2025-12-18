@@ -1,35 +1,12 @@
 package gitlet;
 
 import java.io.File;
-import static gitlet.Utils.*;
 
-// TODO: any imports you need here
-
-/** Represents a gitlet repository.
- *  TODO: It's a good idea to give a description here of what else this Class
- *  此处用于存放一些函数操作，如init以保证Main中代码的简洁。
- *  does at a high level.
- *
- *  @author Shabriri
- */
-public class Repository {
+import static gitlet.Utils.join;
+// 把一些对象操作都放到这里，类似于CapersRepository
+public class SomeObj {
     /**
-     * TODO: add instance variables here.
-     *
-     * List all instance variables of the Repository class here with a useful
-     * comment above them describing what that variable represents and how that
-     * variable is used. We've provided two examples for you.
-     */
-
-    /** The current working directory. */
-    public static final File CWD = new File(System.getProperty("user.dir"));
-    /** The .gitlet directory. */
-    public static final File GITLET_DIR = join(CWD, ".gitlet");
-
-    /* TODO: fill in the rest of this class. */
-
-    /**
-     Creates a new Gitlet version-control system in the current directory.
+    Creates a new Gitlet version-control system in the current directory.
      This system will automatically start with one commit: a commit that contains
      no files and has the commit message initial commit (just like that, with no
      punctuation). It will have a single branch: master, which initially points
@@ -42,9 +19,12 @@ public class Repository {
      in all repositories will trace back to it.
      */
     public void init() {
+        // Get the current working directory
+        File CWD = new File(System.getProperty("user.dir"));
+        File gitFolder = join(CWD, ".gitlet");
         // If there is already a Gitlet version-control system
         // in the current directory, it should abort
-        if (GITLET_DIR.exists()) {
+        if (gitFolder.exists()) {
             System.out.println("A Gitlet version-control system already exists in the current directory.");
             System.exit(0);// 这里这么退出能行么
         }
@@ -56,7 +36,6 @@ public class Repository {
 
         //initialize timestamp in commit class
     }
-
 
     /**
      Saves a snapshot of tracked files in the current commit and staging area so

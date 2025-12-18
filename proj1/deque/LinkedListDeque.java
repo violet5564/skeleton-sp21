@@ -1,7 +1,5 @@
 package deque;
 
-
-
 import java.util.Iterator;
 import java.util.Objects;
 
@@ -9,6 +7,10 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
     private int size;
     private StuffNode sentinel;
 
+    /**
+     * 构造函数，创造一个空node
+     * @param <T>
+     */
     private static class StuffNode<T> {
         private StuffNode prev;
         private T item;
@@ -58,12 +60,6 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
         sentinel.prev = addNode;
         size += 1;
     }
-
-//    // Returns true if deque is empty, false otherwise.
-//    @Override
-//    public boolean isEmpty(){
-//        return size == 0;
-//    }
 
     // Return the size of the Deque.
     @Override
