@@ -1,10 +1,13 @@
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
 
 public class forTest {
     public static void main(String[] args) {
-        System.out.println(dateToTimeStamp(new Date()));
+//        System.out.println(dateToTimeStamp(new Date()));
+//        HashMap<String, String> map1 = new HashMap<>();
+
     }
     // 用于返回指定git格式的日期
     private static String dateToTimeStamp(Date date) {
