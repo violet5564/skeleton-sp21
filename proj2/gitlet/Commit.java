@@ -93,8 +93,11 @@ public class Commit implements Serializable {
     public HashMap<String, String> getFileMap() {
         return this.fileMap;
     }
-
+    // 获取名为fileName文件的哈希值
     public String getFileHash(String fileName) {
+        if (!this.fileMap.containsKey(fileName)) {
+            return null;
+        }
         return fileMap.get(fileName);
     }
 

@@ -36,13 +36,12 @@ public class Main {
                 // failure case
                 validNumberFormat(args, 2);
                 Repository.makeCommit(args[1]);
-
-
                 break;
             case "add":
                 // TODO: handle the `add [filename]` command
                 // failure case
                 validNumberFormat(args, 2);
+                Repository.add(args[1]);
                 break;
             // TODO: FILL THE REST IN
             case "rm":

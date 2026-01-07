@@ -1,5 +1,6 @@
 package gitlet;
 
+import javax.swing.text.AbstractDocument;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -147,35 +148,39 @@ public class Repository {
      */
     public static void add(String fileName) {
         // 1.读取文件
-        File addFile = new File(fileName);
+        File addFile = join(CWD, fileName);
         if(!addFile.exists()) {
             System.out.println("File does not exit");
             return;
         }
         // 2.计算文件的SHA-1
-        String currentContent = readContentsAsString(addFile);
-        String currBlobHash = Utils.sha1(currentContent);
+        byte[] fileContent = readContents(addFile);
+        String currBlobHash = Utils.sha1(fileContent);
 
-        // 3.读取Stage对象和stage的addHashMap
+        //3.将文件放入Blob文件夹
+        File blobFile = join(OBJECT_DIR, currBlobHash);
+        if (!blobFile.exists()) {
+            Blob newBlob = new Blob(currBlobHash, fileContent);
+            newBlob.save();
+        }
+
+        // 4.读取Stage对象和stage的addHashMap
         Stage stage = Stage.readStage();
         HashMap<String, String> addHashMap = stage.getAddFile();
-        // 4.获取当前commit的hashcode
+        // 5.获取当前commit的hashcode
         Commit commit = getHeadCommit();
         String commitBlobHash = commit.getFileHash(fileName);
-        // 5. 如果add的文件和commit中的文件相同,将其从Staging area移除
-        if(commitBlobHash.equals(currBlobHash)) {
+        // 6. 如果add的文件和commit中的文件相同,将其从Staging area移除
+        if(commitBlobHash != null && commitBlobHash.equals(currBlobHash)) {
             stage.unstageAdd(fileName);
             stage.unstageRemove(fileName);
         } else {
             stage.add(fileName, currBlobHash);
             stage.unstageRemove(fileName);
-            // Blob.save();
+
         }
         //6. 将文件添加到staging area并保存
-
         stage.saveStage();
-
-
     }
 
     /**
@@ -183,17 +188,14 @@ public class Repository {
      * @return 当前分支最新的commit
      */
     public static Commit getHeadCommit() {
-        //1. 从head中提取对应分支的字符出
-        String headContent = readContentsAsString(HEAD_F).trim(); // trim去除可能的换行符
+        //1. 读取分支名乘， master还是其他什么
+        String branchName = readContentsAsString(HEAD_F).trim(); // trim去除可能的换行符
 
-        // 2. 提取分支文件的路径
-        // 也就是把 "ref: " 去掉，拿到 "refs/heads/xxxx"
-        String branchPath = headContent.substring(5);
 
-        // 3. 找到那个分支文件 (比如 .gitlet/refs/heads/master)
-        File branchFile = Utils.join(GITLET_DIR, branchPath);
+        // 2. 找到那个分支文件 (比如 .gitlet/refs/heads/master)
+        File branchFile = Utils.join(HEADS_DIR, branchName);
 
-        //4. 读取文件中的哈希hi
+        //3. 读取文件中的哈希hi
         if(!branchFile.exists()) {
             return null; //防御性检查
         }
