@@ -3,9 +3,7 @@ package gitlet;
 import javax.swing.text.AbstractDocument;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 import static gitlet.Utils.*;
 
@@ -129,17 +127,60 @@ public class Repository {
      */
     // 注意serialize 不能用指针，而要用hashcode
     public static void makeCommit(String message) {
-        // Read form my computer the head commit object and the staging area
+        // 1.failure case Every commit must have a non-blank message.
+        if (Objects.equals(message, "")) {
+            System.out.println("Please enter a commit message.");
+        }
+        // 2.  Read form my computer the head commit object and the staging area
+        Commit currCommit = getHeadCommit();
+        if (currCommit == null) {
+            // 处理异常情况
+            // 对于 Gitlet，这意味着数据损坏或找不到对象
+            System.out.println("Error: Commit not found.");
+            System.exit(0); // 或者 System.exit(0);
+        }
+        Stage stage = Stage.readStage();
+        HashMap<String, String> addFile = stage.getAddFile();
+        HashSet<String> removeFile = stage.getRemoveFile();
+        // failure case: 检查stage是否为空
+        if (addFile.isEmpty() && removeFile.isEmpty()) {
+            System.out.println("No changes added to the commit.");
+            return;
+        }
+        // 3.准备parent列表
+        String parentId = currCommit.generateID();
+        List<String> parents = new ArrayList<>();
+        parents.add(parentId);
+        // 4.准备FileMapClone the HEAD commit(克隆一份父commit的内容，再根据stage area进行修改)
+        HashMap<String, String> newMap = new HashMap<>(currCommit.getFileMap());
+        // 用Stage更新FileMap
+        newMap.putAll(addFile);
+        for (String item : removeFile) {
+            newMap.remove(item);
+        }
+        // 5.构造新Commit
+        Commit newCommit = new Commit(message, parents, newMap);
+        // 6. 持久化 (Persistence)
+        //    - 保存 newCommit 到文件
+        //    - 更新 HEAD 指针指向这个新 Commit
+        //    - 清空 Stage (创建一个新的空 Stage 并保存)
+        newCommit.saveCommit();
+        String newCommitID = newCommit.generateID();
+        String branchName = readContentsAsString(HEAD_F).trim();//获取当前分支
+        File branchFile = Utils.join(HEADS_DIR, branchName);
+        if (branchFile.exists()) {
+            writeContents(branchFile, newCommitID);
+        }
+        stage.clear();
 
 
-        // Clone the HEAD commit
-        // modify its message and timestamp according to user input
         // Use the staging area in order to modify the files tracked by the new commit
 
         // Write back any new object made or any modified objects read earlier
 
         // After we done with commit needs to do, we need to ask did we make some new objects
         // that need to be saved.or did we read some objects and modified them.
+
     }
 
 
