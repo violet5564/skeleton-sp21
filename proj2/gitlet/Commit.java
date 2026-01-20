@@ -117,11 +117,9 @@ public class Commit implements Serializable {
     /**
      * Saves a commit to a file for future use.
      */
-    public void saveCommit() {
-        //获取commitID
-        String commitID = this.generateID();
+    public void saveCommit(String id) {
         //获取保存路径
-        File savePath = join(OBJECT_DIR, commitID);
+        File savePath = join(OBJECT_DIR, id);
         // 写入文件
         writeObject(savePath, this);
 

@@ -1,8 +1,8 @@
 package gitlet;
 
-import javax.swing.text.AbstractDocument;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.*;
 
 import static gitlet.Utils.*;
@@ -75,7 +75,7 @@ public class Repository {
         Commit initalCommit = new Commit("initial commit", new ArrayList<>(), new HashMap<>());
         String initCommitID = initalCommit.generateID();
         // 将initial commit写入objects文件夹
-        initalCommit.saveCommit();
+        initalCommit.saveCommit(initCommitID);
 
         /** ==第三步维护master,HEAD,Stage== */
         // 初始化master，文件名为master
@@ -128,8 +128,9 @@ public class Repository {
     // 注意serialize 不能用指针，而要用hashcode
     public static void makeCommit(String message) {
         // 1.failure case Every commit must have a non-blank message.
-        if (Objects.equals(message, "")) {
+        if (message == null || message.trim().isEmpty()) {
             System.out.println("Please enter a commit message.");
+            return;
         }
         // 2.  Read form my computer the head commit object and the staging area
         Commit currCommit = getHeadCommit();
@@ -148,7 +149,7 @@ public class Repository {
             return;
         }
         // 3.准备parent列表
-        String parentId = currCommit.generateID();
+        String parentId = getHeadCommitID();
         List<String> parents = new ArrayList<>();
         parents.add(parentId);
         // 4.准备FileMapClone the HEAD commit(克隆一份父commit的内容，再根据stage area进行修改)
@@ -164,13 +165,11 @@ public class Repository {
         //    - 保存 newCommit 到文件
         //    - 更新 HEAD 指针指向这个新 Commit
         //    - 清空 Stage (创建一个新的空 Stage 并保存)
-        newCommit.saveCommit();
         String newCommitID = newCommit.generateID();
+        newCommit.saveCommit(newCommitID);
         String branchName = readContentsAsString(HEAD_F).trim();//获取当前分支
         File branchFile = Utils.join(HEADS_DIR, branchName);
-        if (branchFile.exists()) {
-            writeContents(branchFile, newCommitID);
-        }
+        writeContents(branchFile, newCommitID);
         stage.clear();
 
 
@@ -207,10 +206,14 @@ public class Repository {
 
         // 4.读取Stage对象和stage的addHashMap
         Stage stage = Stage.readStage();
-        HashMap<String, String> addHashMap = stage.getAddFile();
-        // 5.获取当前commit的hashcode
+        // 5.获取fileName在当前Commit的Hashcode（没有则为null）
         Commit commit = getHeadCommit();
+        if (commit == null) {
+            //commit为null,说明getlet文件夹被破坏，终止程序
+            System.exit(0);
+        }
         String commitBlobHash = commit.getFileHash(fileName);
+
         // 6. 如果add的文件和commit中的文件相同,将其从Staging area移除
         if(commitBlobHash != null && commitBlobHash.equals(currBlobHash)) {
             stage.unstageAdd(fileName);
@@ -224,11 +227,132 @@ public class Repository {
         stage.saveStage();
     }
 
+
+
+    /**
+     * 将指定文件从CWD和stage中删除
+     * @param fileName 将被删除的文件
+     */
+    public static void rm(String fileName) {
+        // If the file is neither staged nor tracked by the head commit,
+        // print the error message No reason to remove the file.
+        // 1.读取fileName文件，stage,和head commit的hashMap
+        File file = join(CWD, fileName);
+        Stage stage = Stage.readStage();
+        HashMap<String, String> addMap = stage.getAddFile();
+//        HashSet<String> rmSet = stage.getRemoveFile();
+        Commit currCommit = getHeadCommit();
+        if (currCommit == null) {
+            System.exit(0);
+        }
+        HashMap<String, String> fileMap = currCommit.getFileMap();//fileMap不会是null,只会为空
+
+        // 2.If the file is neither staged nor tracked by the head commit,
+        // print the error message No reason to remove the file.
+        if (!addMap.containsKey(fileName)  && !fileMap.containsKey(fileName)) {
+            System.out.println("No reason to remove the file.");
+            return;
+        }
+        //3.如果add有，unstage它
+        if (addMap.containsKey(fileName)) {
+            stage.unstageAdd(fileName);
+        }
+        //4.如果在当前commit被tracked。stage it for removal and remove the file from CWD。
+        // 注意，只有在被commit tracked的时候才能从CWD中remove
+        if (fileMap.containsKey(fileName)) {
+            stage.addRemove(fileName);
+            if (file.exists()) {
+                Utils.restrictedDelete(file);
+            }
+        }
+        //5.序列化保存stage，
+        stage.saveStage();
+    }
+
+    /**
+     * 输出当前head所在分支之前的所有commit的相关信息
+     */
+    public static void log() {
+//        ===
+//        commit a0da1ea5a15ab613bf9961fd86f010cf74c7ee48
+//        Date: Thu Nov 9 20:00:05 2017 -0800
+//        A commit message.
+        // 1.获取当前commitID and commit
+        String commitID = getHeadCommitID();
+        Commit curr = getHeadCommit();
+        // 防御性检测
+        if (commitID == null || curr == null) {
+            return;
+        }
+        // 迭代并打印
+        while (curr != null) {
+            System.out.println("===");
+            System.out.println("commit " + commitID);
+            System.out.println("Date: " + curr.getTimestamp());
+            System.out.println(curr.getMessage());
+            System.out.println();
+            // 获取parentID
+            List<String> parents = curr.getParent();
+            // 如果curr为inital commit
+            if (parents.isEmpty()) {
+                curr = null;
+            } else {
+                commitID = parents.get(0);
+                curr = Commit.fromFile(commitID);
+            }
+        }
+    }
+
+    /**
+     *Like log, except displays information about all commits ever made.
+     */
+    public static void globalLog() {
+        // 1.获取所有文件名
+        List<String> fileName = Utils.plainFilenamesIn(OBJECT_DIR);
+        if (fileName == null) {
+            return; //防御
+        }
+        //2. 判断是commit还是blob，对commit调用printLog
+        for (String item : fileName) {
+            File file = join(OBJECT_DIR, item);
+            if (!file.exists()) {
+                return; //防御性检测
+            }
+            try {
+                // 2. 【关键技巧】不要只读 Commit，而是读取为通用的 Serializable 接口
+                // 这样无论是 Blob 还是 Commit 都能读出来，不会报错
+                Serializable obj = Utils.readObject(file, Serializable.class);
+                if (obj instanceof Commit) {
+                    Commit commits = (Commit)obj;
+                    printLog(commits, item);
+                }
+            } catch (IllegalArgumentException e) {
+                // 如果遇到读不出来的坏文件，直接忽略，防止程序崩溃
+                continue;
+            }
+        }
+    }
+
+
+
     /**
      * 该方法用于从HEAD一路顺藤摸瓜获取当前分支最新的Commit
      * @return 当前分支最新的commit
      */
     public static Commit getHeadCommit() {
+        String hash = getHeadCommitID();
+        if (hash == null) {
+            return null;
+        }
+        return Commit.fromFile(hash);
+    }
+
+    /**
+     * 基础层，只返回CommitID
+     * 该方法用于从HEAD一路顺藤摸瓜获取当前分支最新的CommitID
+     * @return 当前分支最新的commitID
+     */
+    public static String getHeadCommitID() {
         //1. 读取分支名乘， master还是其他什么
         String branchName = readContentsAsString(HEAD_F).trim(); // trim去除可能的换行符
 
@@ -240,12 +364,16 @@ public class Repository {
         if(!branchFile.exists()) {
             return null; //防御性检查
         }
-        String hash = readContentsAsString(branchFile).trim();
+        return readContentsAsString(branchFile).trim();
 
-        // 5.根据哈希值获取commit路径
-        File commitPath = join(OBJECT_DIR, hash);
-        return readObject(commitPath, Commit.class);
+    }
 
+    private static void printLog(Commit currCommit, String id) {
+        System.out.println("===");
+        System.out.println("commit " + id);
+        System.out.println("Date: " + currCommit.getTimestamp());
+        System.out.println(currCommit.getMessage());
+        System.out.println();
     }
 
 }

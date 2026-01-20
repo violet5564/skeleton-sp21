@@ -46,18 +46,16 @@ public class Main {
             // TODO: FILL THE REST IN
             case "rm":
                 validNumberFormat(args, 2);
-
-
+                Repository.rm(args[1]);
                 break;
 
             case "log":
                 validNumberFormat(args, 1);
-
-
+                Repository.log();
                 break;
             case "global-log":
                 validNumberFormat(args, 1);
-
+                Repository.globalLog();
                 break;
             case "find":
                 validNumberFormat(args, 2);
