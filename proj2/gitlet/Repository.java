@@ -59,8 +59,7 @@ public class Repository {
         // If there is already a Gitlet version-control system
         // in the current directory, it should abort
         if (GITLET_DIR.exists()) {
-            System.out.println("A Gitlet version-control system already exists in the current directory.");
-            System.exit(0);
+            throw error("A Gitlet version-control system already exists in the current directory.");
         }
         mkdir(GITLET_DIR);
         mkdir(OBJECT_DIR);
@@ -129,24 +128,21 @@ public class Repository {
     public static void makeCommit(String message) {
         // 1.failure case Every commit must have a non-blank message.
         if (message == null || message.trim().isEmpty()) {
-            System.out.println("Please enter a commit message.");
-            return;
+            throw error("Please enter a commit message.");
         }
         // 2.  Read form my computer the head commit object and the staging area
         Commit currCommit = getHeadCommit();
         if (currCommit == null) {
             // 处理异常情况
             // 对于 Gitlet，这意味着数据损坏或找不到对象
-            System.out.println("Error: Commit not found.");
-            System.exit(0); // 或者 System.exit(0);
+            throw error("Error: Commit not found.");
         }
         Stage stage = Stage.readStage();
         HashMap<String, String> addFile = stage.getAddFile();
         HashSet<String> removeFile = stage.getRemoveFile();
         // failure case: 检查stage是否为空
         if (addFile.isEmpty() && removeFile.isEmpty()) {
-            System.out.println("No changes added to the commit.");
-            return;
+            throw error("No changes added to the commit.");
         }
         // 3.准备parent列表
         String parentId = getHeadCommitID();
@@ -190,8 +186,7 @@ public class Repository {
         // 1.读取文件
         File addFile = join(CWD, fileName);
         if(!addFile.exists()) {
-            System.out.println("File does not exit");
-            return;
+            throw error("File does not exit");
         }
         // 2.计算文件的SHA-1
         byte[] fileContent = readContents(addFile);
@@ -210,7 +205,8 @@ public class Repository {
         Commit commit = getHeadCommit();
         if (commit == null) {
             //commit为null,说明getlet文件夹被破坏，终止程序
-            System.exit(0);
+//            System.exit(0);
+            throw error("Can not find .gitlet dir");
         }
         String commitBlobHash = commit.getFileHash(fileName);
 
@@ -250,8 +246,7 @@ public class Repository {
         // 2.If the file is neither staged nor tracked by the head commit,
         // print the error message No reason to remove the file.
         if (!addMap.containsKey(fileName)  && !fileMap.containsKey(fileName)) {
-            System.out.println("No reason to remove the file.");
-            return;
+            throw error("No reason to remove the file.");
         }
         //3.如果add有，unstage它
         if (addMap.containsKey(fileName)) {
@@ -333,6 +328,82 @@ public class Repository {
         }
     }
 
+    /**
+     *  Prints out the ids of all commits that have the given commit message
+     * @param message
+     */
+    public static void find(String message) {
+        // 1.获取所有文件名
+        List<String> fileName = Utils.plainFilenamesIn(OBJECT_DIR);
+        if (fileName == null) {
+            return; //防御
+        }
+        // 设置boolean变量用于判断failure case
+        boolean found = false;
+
+        // 2.判断是commit 还是blob
+        for (String item : fileName) {
+            File file = join(OBJECT_DIR, item);
+            if (!file.exists()) {
+                return; //防御性检测
+            }
+            try {
+                // 2. 【关键技巧】不要只读 Commit，而是读取为通用的 Serializable 接口
+                // 这样无论是 Blob 还是 Commit 都能读出来，不会报错
+                Serializable obj = Utils.readObject(file, Serializable.class);
+                if (obj instanceof Commit) {
+                    Commit curr = (Commit)obj;
+                    // 遍历所有commit,message符合就输出id
+                    if (curr.getMessage().equals(message)) {
+                        found = true;
+                        System.out.println(item);
+                    }
+                }
+            } catch (IllegalArgumentException e) {
+                // 如果遇到读不出来的坏文件，直接忽略，防止程序崩溃
+                continue;
+            }
+        }
+        if (!found) {
+            throw error("Found no commit with that message.");
+        }
+    }
+
+    /**
+     * Displays branches, stage, other file information.
+     */
+    public static void status() {
+        // 1.获取所有分支
+        List<String> branches = Utils.plainFilenamesIn(HEADS_DIR);
+        if (branches == null) {
+            throw error("branches读取失败");
+        }
+        String head = Utils.readContentsAsString(HEAD_F).trim();
+        //2. 给当前分支加上*
+        for (int i = 0; i < branches.size(); i++) {
+            if (branches.get(i).equals(head)) {
+                branches.set(i, "*" + branches.get(i));
+                break; // 通常只有一个当前分支，找到即可退出
+            }
+        }
+        // 打印Branches表
+        printTable("Branches", branches);
+
+        //读取stage内容
+        Stage stage = Stage.readStage();
+        HashMap<String, String> addMap = stage.getAddFile();
+        HashSet<String> rmSet = stage.getRemoveFile();
+        // 将stage的Map和set都转成list方便打印
+        List<String> addList = new ArrayList<>(addMap.keySet());
+        List<String> rmList = new ArrayList<>(rmSet);
+        Collections.sort(addList); // 字典序
+        Collections.sort(rmList);  // 字典序
+        printTable("Staged Files", addList);
+        printTable("Removed Files", rmList);
+        // 这样写既符合格式，又偷懒了（打印了标题和空行，但不打印内容）
+        printTable("Modifications Not Staged For Commit", new ArrayList<>());
+        printTable("Untracked Files", new ArrayList<>());
+    }
 
 
     /**
@@ -368,11 +439,29 @@ public class Repository {
 
     }
 
+    /**
+     * 辅助函数，用于帮助global-log命令打印内容弄个
+     * @param currCommit 要打印的commit
+     * @param id currCommit对应的哈希值
+     */
     private static void printLog(Commit currCommit, String id) {
         System.out.println("===");
         System.out.println("commit " + id);
         System.out.println("Date: " + currCommit.getTimestamp());
         System.out.println(currCommit.getMessage());
+        System.out.println();
+    }
+
+    /**
+     * 辅助函数，帮助status打印所有的的表
+     * @param headName 表头
+     * @param content 表中内容
+     */
+    private static void printTable(String headName, List<String> content) {
+        message("=== %s ===", headName);
+        for (String item : content) {
+            System.out.println(item);
+        }
         System.out.println();
     }
 

@@ -25,70 +25,73 @@ public class Main {
         }
 
         String firstArg = args[0];
-        switch(firstArg) {
-            case "init":
-                // TODO: handle the `init` command
-                validNumberFormat(args, 1);
-                // 初始化操作
-                Repository.init();
-                break;
-            case "commit":
-                // failure case
-                validNumberFormat(args, 2);
-                Repository.makeCommit(args[1]);
-                break;
-            case "add":
-                // TODO: handle the `add [filename]` command
-                // failure case
-                validNumberFormat(args, 2);
-                Repository.add(args[1]);
-                break;
-            // TODO: FILL THE REST IN
-            case "rm":
-                validNumberFormat(args, 2);
-                Repository.rm(args[1]);
-                break;
+        try {
+            switch(firstArg) {
+                case "init":
+                    // TODO: handle the `init` command
+                    validNumberFormat(args, 1);
+                    // 初始化操作
+                    Repository.init();
+                    break;
+                case "commit":
+                    // failure case
+                    validNumberFormat(args, 2);
+                    Repository.makeCommit(args[1]);
+                    break;
+                case "add":
+                    // TODO: handle the `add [filename]` command
+                    // failure case
+                    validNumberFormat(args, 2);
+                    Repository.add(args[1]);
+                    break;
+                // TODO: FILL THE REST IN
+                case "rm":
+                    validNumberFormat(args, 2);
+                    Repository.rm(args[1]);
+                    break;
+                case "log":
+                    validNumberFormat(args, 1);
+                    Repository.log();
+                    break;
+                case "global-log":
+                    validNumberFormat(args, 1);
+                    Repository.globalLog();
+                    break;
+                case "find":
+                    validNumberFormat(args, 2);
+                    Repository.find(args[1]);
+                    break;
+                case "status":
+                    validNumberFormat(args, 1);
+                    Repository.status();
+                    break;
+                case "checkout":
+                    handleCheckout(args);
 
-            case "log":
-                validNumberFormat(args, 1);
-                Repository.log();
-                break;
-            case "global-log":
-                validNumberFormat(args, 1);
-                Repository.globalLog();
-                break;
-            case "find":
-                validNumberFormat(args, 2);
+                    break;
 
-                break;
-            case "status":
-                validNumberFormat(args, 1);
+                case "branch":
+                    validNumberFormat(args, 2);
 
-                break;
+                    break;
+                case "rm-branch":
+                    validNumberFormat(args, 2);
 
-            case "checkout":
-                handleCheckout(args);
+                    break;
+                case "reset":
+                    validNumberFormat(args, 2);
 
-                break;
+                    break;
+                case "merge":
+                    validNumberFormat(args,2);
 
-            case "branch":
-                validNumberFormat(args, 2);
-
-                break;
-            case "rm-branch":
-                validNumberFormat(args, 2);
-
-                break;
-            case "reset":
-                validNumberFormat(args, 2);
-
-                break;
-            case "merge":
-                validNumberFormat(args,2);
-
-                break;
-            default:
-                System.out.println("No command with that name exists.");
+                    break;
+                default:
+                    System.out.println("No command with that name exists.");
+            }
+        } catch (GitletException e){
+            System.out.println(e.getMessage());
+            System.exit(0);
         }
     }
 
@@ -101,7 +104,7 @@ public class Main {
         // If a user inputs a command with the wrong number or format of operands,
         // print the message Incorrect operands. and exit.
         if (args.length != formatNumber) {
-            throw new RuntimeException("Incorrect operands.");
+            throw Utils.error("Incorrect operands.");
         }
         String firstArg = args[0];
         // 如果没有进行init,则需要输出并报错
@@ -109,8 +112,6 @@ public class Main {
             System.out.println("Not in an initialized Gitlet directory.");
             System.exit(0);
         }
-
-
     }
 
     // checkout 命令比较复杂，单独拿出来处理。
