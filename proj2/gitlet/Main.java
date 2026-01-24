@@ -67,7 +67,6 @@ public class Main {
                     break;
                 case "checkout":
                     handleCheckout(args);
-
                     break;
 
                 case "branch":
@@ -100,22 +99,44 @@ public class Main {
      * @param args 命令行参数输入
      * @param formatNumber 期望的参数个数
      */
-    public static void validNumberFormat(String[] args, int formatNumber) {
+    private static void validNumberFormat(String[] args, int formatNumber) {
         // If a user inputs a command with the wrong number or format of operands,
         // print the message Incorrect operands. and exit.
-        if (args.length != formatNumber) {
-            throw Utils.error("Incorrect operands.");
-        }
-        String firstArg = args[0];
         // 如果没有进行init,则需要输出并报错
+        String firstArg = args[0];
         if (!firstArg.equals("init") && !Repository.GITLET_DIR.exists()) {
             System.out.println("Not in an initialized Gitlet directory.");
             System.exit(0);
         }
+        if (args.length != formatNumber) {
+            throw Utils.error("Incorrect operands.");
+        }
+
+
     }
 
-    // checkout 命令比较复杂，单独拿出来处理。
-    public static void handleCheckout(String[] args) {
-
+    /**
+     * 辅助函数，用于处理checkout命令的输入参数检查
+     * @param args 命令函参数
+     */
+    private static void handleCheckout(String[] args) {
+        if (args.length == 2) {
+            // java gitlet.Main checkout [branch name]
+            Repository.checkoutBranch(args[1]);
+        } else if (args.length == 3) {
+//            java gitlet.Main checkout -- [file name]
+            if (!args[1].equals("--")) {
+                throw Utils.error("Incorrect operands.");
+            }
+            Repository.checkoutFile(args[2]);
+        } else if (args.length == 4) {
+//            java gitlet.Main checkout [commit id] -- [file name]
+            if (!args[2].equals("--")) {
+                throw Utils.error("Incorrect operands.");
+            }
+            Repository.checkoutCommitFile(args[1], args[3]);
+        } else {
+            throw Utils.error("Incorrect operands.");
+        }
     }
 }

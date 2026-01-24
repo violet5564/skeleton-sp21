@@ -44,6 +44,14 @@ public class Blob implements Serializable {
         writeObject(savePath, this);
     }
 
+    /**
+     * 用于返回Blob对象保存的文件内容
+     * @return 以byte数组储存的文件内容
+     */
+    public byte[] getFileContent() {
+        return fileContent;
+    }
+
 
 
 

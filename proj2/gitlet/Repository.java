@@ -405,6 +405,121 @@ public class Repository {
         printTable("Untracked Files", new ArrayList<>());
     }
 
+    /**
+     * 切换分支
+     * @param targetBranch 目标分支id
+     */
+    public static void checkoutBranch(String targetBranch) {
+        // 1.获取branch分支的head commit
+        File targetBranchFile = join(HEADS_DIR, targetBranch);
+        if (!targetBranchFile.exists()) {
+            throw error("No such branch exists.");
+        }
+        // 如果是同一个branch，报错
+        String currBranch = readContentsAsString(HEAD_F).trim();
+        if (currBranch.equals(targetBranch)) {
+            throw error("No need to checkout the current branch.");
+        }
+        // 2.获取targetBranch的HashMap
+        String targetBranchID = readContentsAsString(targetBranchFile).trim();
+        Commit targetCommit = Commit.fromFile(targetBranchID);
+        if (targetCommit == null) {//防御性检测
+            throw error("读取otherCommit失败");
+        }
+        HashMap<String, String> targetCommitFileMap = targetCommit.getFileMap();
+        // 3.获取当前分支的HashMap
+        Commit curr = getHeadCommit();
+        if (curr == null) {
+            throw error("获取currCommit失败。");
+        }
+        HashMap<String, String> currCommitFileMap = curr.getFileMap();
+        //4.核心处理逻辑
+        Stage stage = Stage.readStage();
+        HashMap<String, String> addMap = stage.getAddFile();
+        //4.1 判断报错情况：目标有，curr没有，CWD有
+        List<String> fileName = Utils.plainFilenamesIn(CWD);
+        if (fileName != null) {
+            for(String item : fileName) {
+                boolean inTarget = targetCommitFileMap.containsKey(item);
+                boolean InCurr = currCommitFileMap.containsKey(item);
+                boolean inStage = addMap.containsKey(item);
+                if (inTarget && !InCurr && !inStage) {
+                    throw error("There is an untracked file in the way; delete it, or add and commit it first.");
+                }
+            }
+        }
+
+        // 4.2 将所有targetCommit中的文件写入到CWD
+        for (String blobName : targetCommitFileMap.keySet()) {//遍历所有的blob name
+            String blobHash = targetCommitFileMap.get(blobName); //得到blob的Hash
+            Blob blob = Blob.fromFile(blobHash);
+            if (blob == null) {
+                throw error("Corrupt gitlet: missing blob %s", blobHash);
+            }
+            File overWrite = join(CWD, blobName);
+            Utils.writeContents(overWrite, (Object) blob.getFileContent());
+        }
+        // 4.3 删除targetCommit没有的文件
+        for (String item : currCommitFileMap.keySet()) {
+            // 如果目标commit没有追踪
+            if (!targetCommitFileMap.containsKey(item)) {
+                File delete = join(CWD, item);
+                Utils.restrictedDelete(delete);
+            }
+        }
+
+        // 5. 更改HEAD
+        Utils.writeContents(HEAD_F, targetBranch);
+        // 6. 清楚stage
+
+        stage.clear();
+
+
+
+    }
+
+    /**
+     * 将指定文件恢复到最新的commit中的状态
+     * @param file 文件名
+     */
+    public static void checkoutFile(String file) {
+        //1. 从head中读取最新的commit
+        String currID = getHeadCommitID();
+        if (currID == null) {
+            throw error("Can't find Head Commit.");
+        }
+        checkoutCommitFile(currID, file);
+    }
+
+    /**
+     * 从之前的某个Commit追踪的文件中把filename的文件拉过来
+     * @param commitID 之前的某个commitID
+     * @param file 文件名
+     */
+    public static void checkoutCommitFile(String commitID, String file) {
+        // 1.根据ID获取commit对象
+         String fullID = resolveCommitID(commitID);
+         if (fullID == null) throw error("No commit with that id exists.");
+        Commit curr = Commit.fromFile(fullID);
+        if (curr == null) {
+            throw error("No commits with this id exits.");
+        }
+
+        // 2.读取Blob对象,处理failure case
+        String blobId = curr.getFileHash(file);
+        if (blobId == null) {
+            throw error("File does not exist in that commit.");
+        }
+        // 3.读取blob对象
+        Blob fileBlob = Blob.fromFile(blobId);
+        if (fileBlob == null) {
+            throw error("读取Blob对象失败");
+        }
+        // 写入CWD的file
+        File file1 = join(CWD, file);
+        Utils.writeContents(file1, (Object) fileBlob.getFileContent());
+
+    }
 
     /**
      * 该方法用于从HEAD一路顺藤摸瓜获取当前分支最新的Commit
@@ -463,6 +578,27 @@ public class Repository {
             System.out.println(item);
         }
         System.out.println();
+    }
+
+    /**
+     * 该方法用于处理输入的commitid为简化版的情况
+     * @param shortID
+     * @return
+     */
+    private static String resolveCommitID(String shortID) {
+        // 如果长度是 40，假设它是完整的
+        if (shortID.length() == 40) {
+            return shortID;
+        }
+        // 否则去 objects 目录里遍历查找以 shortID 开头的文件
+        List<String> objects = Utils.plainFilenamesIn(OBJECT_DIR);
+        for (String id : objects) {
+            if (id.startsWith(shortID)) {
+                return id; // 找到了！(假设没有重复前缀，简化处理)
+            }
+        }
+        // 没找到
+        return null;
     }
 
 }
