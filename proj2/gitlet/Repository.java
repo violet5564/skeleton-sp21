@@ -194,12 +194,7 @@ public class Repository {
         byte[] fileContent = readContents(addFile);
         String currBlobHash = Utils.sha1(fileContent);
 
-        //3.将文件放入Blob文件夹
-        File blobFile = join(OBJECT_DIR, currBlobHash);
-        if (!blobFile.exists()) {
-            Blob newBlob = new Blob(currBlobHash, fileContent);
-            newBlob.save();
-        }
+        // 将原本位于此处的Blob save逻辑后置。
 
         // 4.读取Stage对象和stage的addHashMap
         Stage stage = Stage.readStage();
@@ -222,6 +217,12 @@ public class Repository {
 
         }
         //6. 将文件添加到staging area并保存
+        //将文件放入Blob文件夹
+        File blobFile = join(OBJECT_DIR, currBlobHash);
+        if (!blobFile.exists()) {
+            Blob newBlob = new Blob(currBlobHash, fileContent);
+            newBlob.save();
+        }
         stage.saveStage();
     }
 
@@ -688,8 +689,6 @@ public class Repository {
         }
         //4.清空stage
         stage.clear();
-
-
     }
 
 }
