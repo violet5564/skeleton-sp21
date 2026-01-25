@@ -71,15 +71,15 @@ public class Main {
 
                 case "branch":
                     validNumberFormat(args, 2);
-
+                    Repository.branch(args[1]);
                     break;
                 case "rm-branch":
                     validNumberFormat(args, 2);
-
+                    Repository.rmBranch(args[1]);
                     break;
                 case "reset":
                     validNumberFormat(args, 2);
-
+                    Repository.reset(args[1]);
                     break;
                 case "merge":
                     validNumberFormat(args,2);

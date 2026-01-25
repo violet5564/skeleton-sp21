@@ -1,5 +1,7 @@
 package gitlet;
 
+import jdk.jshell.execution.Util;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -410,7 +412,7 @@ public class Repository {
      * @param targetBranch 目标分支id
      */
     public static void checkoutBranch(String targetBranch) {
-        // 1.获取branch分支的head commit
+        // 获取branch分支的head commit
         File targetBranchFile = join(HEADS_DIR, targetBranch);
         if (!targetBranchFile.exists()) {
             throw error("No such branch exists.");
@@ -420,62 +422,12 @@ public class Repository {
         if (currBranch.equals(targetBranch)) {
             throw error("No need to checkout the current branch.");
         }
-        // 2.获取targetBranch的HashMap
+        // 获取targetBranch headCommit
         String targetBranchID = readContentsAsString(targetBranchFile).trim();
-        Commit targetCommit = Commit.fromFile(targetBranchID);
-        if (targetCommit == null) {//防御性检测
-            throw error("读取otherCommit失败");
-        }
-        HashMap<String, String> targetCommitFileMap = targetCommit.getFileMap();
-        // 3.获取当前分支的HashMap
-        Commit curr = getHeadCommit();
-        if (curr == null) {
-            throw error("获取currCommit失败。");
-        }
-        HashMap<String, String> currCommitFileMap = curr.getFileMap();
-        //4.核心处理逻辑
-        Stage stage = Stage.readStage();
-        HashMap<String, String> addMap = stage.getAddFile();
-        //4.1 判断报错情况：目标有，curr没有，CWD有
-        List<String> fileName = Utils.plainFilenamesIn(CWD);
-        if (fileName != null) {
-            for(String item : fileName) {
-                boolean inTarget = targetCommitFileMap.containsKey(item);
-                boolean InCurr = currCommitFileMap.containsKey(item);
-                boolean inStage = addMap.containsKey(item);
-                if (inTarget && !InCurr && !inStage) {
-                    throw error("There is an untracked file in the way; delete it, or add and commit it first.");
-                }
-            }
-        }
-
-        // 4.2 将所有targetCommit中的文件写入到CWD
-        for (String blobName : targetCommitFileMap.keySet()) {//遍历所有的blob name
-            String blobHash = targetCommitFileMap.get(blobName); //得到blob的Hash
-            Blob blob = Blob.fromFile(blobHash);
-            if (blob == null) {
-                throw error("Corrupt gitlet: missing blob %s", blobHash);
-            }
-            File overWrite = join(CWD, blobName);
-            Utils.writeContents(overWrite, (Object) blob.getFileContent());
-        }
-        // 4.3 删除targetCommit没有的文件
-        for (String item : currCommitFileMap.keySet()) {
-            // 如果目标commit没有追踪
-            if (!targetCommitFileMap.containsKey(item)) {
-                File delete = join(CWD, item);
-                Utils.restrictedDelete(delete);
-            }
-        }
-
-        // 5. 更改HEAD
+        // 调用核心报错和文件覆盖逻辑
+        checkoutAllFiles(targetBranchID);
+        // 更改HEAD
         Utils.writeContents(HEAD_F, targetBranch);
-        // 6. 清楚stage
-
-        stage.clear();
-
-
-
     }
 
     /**
@@ -521,6 +473,64 @@ public class Repository {
 
     }
 
+
+    /**
+     * Creates a new branch with the given name, and points it at the current head commit.
+     * @param branchName the new branch name
+     */
+    public static void branch (String branchName) {
+        // 在HEADS文件夹中创建分支文件，名字是分支名
+        File branchFile = join(HEADS_DIR, branchName);
+        if (branchFile.exists()) {
+            throw error("A branch with that name already exists.");
+        }
+        // 获取最新commitID
+        String currId = getHeadCommitID();
+
+        writeContents(branchFile, currId);
+
+    }
+
+    /**
+     * Deletes the branch with the given name.
+     * @param branchName the branch need to be deleted
+     */
+    public static void rmBranch (String branchName) {
+        File branchFile = join(HEADS_DIR, branchName);
+        if (!branchFile.exists()) {
+            throw error("A branch with that name does not exist.");
+        }
+        // 如果移除的是当前的branch，报错
+        String currBranch = Utils.readContentsAsString(HEAD_F);
+        if (currBranch.equals(branchName)) {
+            throw error("Cannot remove the current branch.");
+        }
+         Utils.restrictedDelete(branchFile);
+
+    }
+
+    /**
+     *将版本回滚到指定的commitID处
+     * @param commitID 给定的commit的哈希值
+     */
+    public static void reset (String commitID) {
+        //处理缩写hash
+        String fullCommitID = resolveCommitID(commitID);
+        //核心处理逻辑
+        checkoutAllFiles(fullCommitID);
+        // 3. 移动当前分支的指针 (Reset 的特有动作)
+        //    HEAD 现在存的是 "master"
+        String currentBranchName = readContentsAsString(HEAD_F).trim();
+        File branchFile = join(HEADS_DIR, currentBranchName);
+
+        //    把 master 强行指向这个 commitID
+        writeContents(branchFile, fullCommitID);
+
+    }
+
+//    =========================================
+//    -------------------辅助函数---------------
+//    =========================================
     /**
      * 该方法用于从HEAD一路顺藤摸瓜获取当前分支最新的Commit
      * @return 当前分支最新的commit
@@ -599,6 +609,87 @@ public class Repository {
         }
         // 没找到
         return null;
+    }
+
+//    /**
+//     * 返回所有被当前分支track的文件
+//     * @return 被当前分支追踪的文件名
+//     */
+//    private static Set<String> getTrackedFile (){
+//        HashSet<String> tracked = new HashSet<>();
+//        Commit curr = getHeadCommit();
+//        if (curr == null) throw error("读取最新commit失败。");
+//
+//        Stage stage = Stage.readStage();
+//
+//
+//        // 1. 所有当前 commit 中的文件（tracked by default）
+//        tracked.addAll(curr.getFileMap().keySet());
+//
+//        // 2. 所有 staged for addition 的文件（即使是新文件，也算 tracked）
+//        tracked.addAll(stage.getAddFile().keySet());
+//
+//        // 3. 移除所有 staged for removal 的文件
+//        tracked.removeAll(stage.getRemoveFile());
+//
+//        return tracked;
+//    }
+
+    /**
+     * 将CWD变为指定commit的状态
+     * @param targetCommitID 指定commit的hash
+     */
+    private static void checkoutAllFiles(String targetCommitID) {
+        // 1.获取相关文件列表
+        //获取目标commit的fileMap
+        Commit targetCommit = Commit.fromFile(targetCommitID);
+        if (targetCommit == null) {//防御性检测
+            throw error("No commit with that id exists.");
+        }
+        HashMap<String, String> targetCommitFileMap = targetCommit.getFileMap();
+        // 获取curr commit的fileMap
+        Commit curr = getHeadCommit();
+        if (curr == null) {
+            throw error("获取currCommit失败。");
+        }
+        HashMap<String, String> currCommitFileMap = curr.getFileMap();
+        // 处理failure case
+        Stage stage = Stage.readStage();
+        HashMap<String, String> addMap = stage.getAddFile();
+        List<String> fileName = Utils.plainFilenamesIn(CWD);
+        if (fileName != null) {
+            for(String item : fileName) {
+                boolean inTarget = targetCommitFileMap.containsKey(item);
+                boolean InCurr = currCommitFileMap.containsKey(item);
+                boolean inStage = addMap.containsKey(item);
+                if (inTarget && !InCurr && !inStage) {
+                    throw error("There is an untracked file in the way; delete it, or add and commit it first.");
+                }
+            }
+        }
+
+        //2. 覆盖文件
+        for (String blobName : targetCommitFileMap.keySet()) {//遍历所有的blob name
+            String blobHash = targetCommitFileMap.get(blobName); //得到blob的Hash
+            Blob blob = Blob.fromFile(blobHash);
+            if (blob == null) {
+                throw error("Corrupt gitlet: missing blob %s", blobHash);
+            }
+            File overWrite = join(CWD, blobName);
+            Utils.writeContents(overWrite, (Object) blob.getFileContent());
+        }
+        // 3. 删除targetCommit没有的文件
+        for (String item : currCommitFileMap.keySet()) {
+            // 如果目标commit没有追踪
+            if (!targetCommitFileMap.containsKey(item)) {
+                File delete = join(CWD, item);
+                Utils.restrictedDelete(delete);
+            }
+        }
+        //4.清空stage
+        stage.clear();
+
+
     }
 
 }

@@ -39,8 +39,8 @@ public class Blob implements Serializable {
      *
      */
     public void save() {
-        String BlobHash = this.generateID();
-        File savePath = join(OBJECT_DIR, BlobHash);
+//        String BlobHash = this.generateID();
+        File savePath = join(OBJECT_DIR, this.fileName);
         writeObject(savePath, this);
     }
 
