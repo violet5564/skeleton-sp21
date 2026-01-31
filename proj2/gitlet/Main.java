@@ -1,11 +1,5 @@
 package gitlet;
 
-import jdk.dynalink.beans.StaticClass;
-
-import java.io.File;
-
-import static gitlet.Utils.join;
-
 
 /** Driver class for Gitlet, a subset of the Git version-control system.
  *  @author Shabriri
@@ -83,7 +77,7 @@ public class Main {
                     break;
                 case "merge":
                     validNumberFormat(args,2);
-
+                    Repository.merge(args[1]);
                     break;
                 default:
                     System.out.println("No command with that name exists.");

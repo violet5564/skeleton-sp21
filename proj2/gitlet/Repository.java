@@ -1,7 +1,5 @@
 package gitlet;
 
-import jdk.jshell.execution.Util;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -178,6 +176,56 @@ public class Repository {
         // After we done with commit needs to do, we need to ask did we make some new objects
         // that need to be saved.or did we read some objects and modified them.
 
+    }
+
+    /**
+     * 该重载方法用于处理merge最后的commit
+     * @param message commit信息
+     * @param otherBranch 与当前branch merge的另外的branch
+     */
+    public static void makeCommit(String message, String otherBranch) {
+        // 1.failure case Every commit must have a non-blank message.
+        if (message == null || message.trim().isEmpty()) {
+            throw error("Please enter a commit message.");
+        }
+        // 2.  Read form my computer the head commit object and the staging area
+        Commit currCommit = getHeadCommit();
+        if (currCommit == null) {
+            // 处理异常情况
+            // 对于 Gitlet，这意味着数据损坏或找不到对象
+            throw error("Error: Commit not found.");
+        }
+        Stage stage = Stage.readStage();
+        HashMap<String, String> addFile = stage.getAddFile();
+        HashSet<String> removeFile = stage.getRemoveFile();
+        // failure case: 检查stage是否为空
+        if (addFile.isEmpty() && removeFile.isEmpty()) {
+            throw error("No changes added to the commit.");
+        }
+        // 3.准备parent列表
+        String parentId1 = getHeadCommitID();
+        List<String> parents = new ArrayList<>();
+        parents.add(parentId1);
+        parents.add(otherBranch);
+        // 4.准备FileMapClone the HEAD commit(克隆一份父commit的内容，再根据stage area进行修改)
+        HashMap<String, String> newMap = new HashMap<>(currCommit.getFileMap());
+        // 用Stage更新FileMap
+        newMap.putAll(addFile);
+        for (String item : removeFile) {
+            newMap.remove(item);
+        }
+        // 5.构造新Commit
+        Commit newCommit = new Commit(message, parents, newMap);
+        // 6. 持久化 (Persistence)
+        //    - 保存 newCommit 到文件
+        //    - 更新 HEAD 指针指向这个新 Commit
+        //    - 清空 Stage (创建一个新的空 Stage 并保存)
+        String newCommitID = newCommit.generateID();
+        newCommit.saveCommit(newCommitID);
+        String branchName = readContentsAsString(HEAD_F).trim();//获取当前分支
+        File branchFile = Utils.join(HEADS_DIR, branchName);
+        writeContents(branchFile, newCommitID);
+        stage.clear();
     }
 
 
@@ -529,6 +577,126 @@ public class Repository {
 
     }
 
+    /**
+     * Merges files from the given branch into the current branch.
+     * @param branchName given branch
+     */
+    public static void merge (String branchName) {
+        //1. failure case
+        // 1.1 stage不为空报错
+        Stage stage = Stage.readStage();
+        if (!stage.getAddFile().isEmpty() || !stage.getRemoveFile().isEmpty()) {
+            throw error("You have uncommitted changes.");
+        }
+        // 1.2 Given branch不存在报错
+        File branchFile = join(HEADS_DIR, branchName);
+        if (!branchFile.exists()) {
+            throw error("A branch with that name does not exist.");
+        }
+        // 1.3 试图merge自己，报错
+        String currBranch = readContentsAsString(HEAD_F);
+        if (currBranch.equals(branchName)) {
+            throw error("Cannot merge a branch with itself.");
+        }
+        // 1.4 untracked file 要被deleted or overwriten
+
+        // 2. 使用BFS找到split point
+        // 获取curr branch commit and given branch commit
+        String currCommit = getHeadCommitID();
+        String givenCommit = readContentsAsString(branchFile);
+        String splitPoint = findSplitPoint(currCommit, givenCommit);
+
+        // 获取split point 之后处理错误情况
+        if (Objects.equals(splitPoint, givenCommit)) {
+            throw error("Given branch is an ancestor of the current branch.");
+        }
+        if (Objects.equals(currCommit, splitPoint)) {
+            checkoutBranch(branchName);
+            message("Current branch fast-forwarded.");
+            return;
+        }
+
+        // 获取三个commit的HashMap用于后续的文件操作
+        Commit curr = Commit.fromFile(currCommit);
+        if (curr == null) throw error("读取commit%s失败", curr);
+        HashMap<String, String> currMap = curr.getFileMap();
+        Commit given = Commit.fromFile(givenCommit);
+        if (given == null) throw error("读取commit%s失败", given);
+        HashMap<String, String> givenMap = given.getFileMap();
+        Commit split = Commit.fromFile(splitPoint);
+        if (split == null) throw error("读取commit%s失败", split);
+        HashMap<String, String>  sMap = split.getFileMap();
+
+        // 3.构造文件并集
+        // 获取迭代文件列表split + given + curr(CWD的untracked怎么说?)
+        HashSet<String> allFile = new HashSet<>();
+        allFile.addAll(curr.getFileMap().keySet());
+        allFile.addAll(given.getFileMap().keySet());
+        allFile.addAll(split.getFileMap().keySet());
+
+        // 4. 检测untracked file
+        // 遍历CWD中的文件，如果untracked,且givenMap中有，报错。（这是更宽泛的条件，可以更严格）
+        List<String> cwdFile = Utils.plainFilenamesIn(CWD);
+        if (cwdFile == null) throw error("读取CWD失败");//防御性检测
+        for (String file : cwdFile) {
+            if (!currMap.containsKey(file) && givenMap.containsKey(file)) {
+                throw error("There is an untracked file in the way; delete it, or add and commit it first.");
+            }
+        }
+
+        // 5. 核心循环(get返回的结果是空怎么办？即不存在当前commit,应该也没关系把)
+        for (String file : allFile) {
+            String sHash = sMap.get(file);
+            String cHash = currMap.get(file);
+            String gHash = givenMap.get(file);
+            // 5.1 given改了或者删了，curr没改
+            //5.5 只在given中删除
+            // 此处使用object.equals来避免NPE报错
+            if (Objects.equals(sHash, cHash) && !Objects.equals(sHash, gHash)) {
+                if (gHash != null) {
+                    checkoutCommitFile(givenCommit, file);
+                    add(file);
+                } else {
+                    rm(file);
+                }
+//             下面的情况都不需要操作因此直接忽略
+//            } else if (Objects.equals(sHash, gHash) && !Objects.equals(sHash, cHash)) {
+//                // 5.2given没改，curr改了
+//                // 5.4 只在curr中删除
+//                // do nothing
+//            } else if (!Objects.equals(sHash, cHash) && Objects.equals(cHash, gHash)) {
+//                // 5.3 修改内容一样，什么也不变。
+            } else if (!Objects.equals(sHash, cHash) &&
+                    !Objects.equals(sHash, gHash) &&
+                    !Objects.equals(cHash, gHash)
+            ) {
+                // curr和given都和split不一样，冲突！
+                message("Encountered a merge conflict.");
+
+                String currBranchContent = "";
+                String givenBranchContent = "";
+                if (cHash != null) { // ✅ 先检查 null
+                    // 最好封装一个 Blob.getContentAsString(hash)
+                    Blob b = Blob.fromFile(cHash);
+                    if (b != null) currBranchContent = new String(b.getFileContent()); // 注意 byte[] 转 String
+                }
+                if (gHash != null) {
+                    Blob b2 = Blob.fromFile(gHash);
+                    if (b2 != null) givenBranchContent = new String(b2.getFileContent());
+                }
+
+                String newContent = "<<<<<<< HEAD\n" + currBranchContent + "\n" + "=======\n" + givenBranchContent + "\n" + ">>>>>>>";
+                File newFile = join(CWD, file);
+                writeContents(newFile, newContent);
+                add(file);
+            }
+        }
+
+
+        // 6. commit
+        makeCommit("Merged " + branchName + " into " + currBranch + ".", givenCommit);
+    }
+
 //    =========================================
 //    -------------------辅助函数---------------
 //    =========================================
@@ -691,4 +859,59 @@ public class Repository {
         stage.clear();
     }
 
+    /**
+     * 输入两个分支的commit，找到两个分支的split point
+     * @return split point的commit id
+     */
+    private static String findSplitPoint(String commitID1, String commitID2) {
+        // 1. 收集commitID1的parent
+        Set<String> ancestors = new HashSet<>();
+        Queue<String> fringe = new LinkedList<>();
+
+        fringe.add(commitID1);
+
+        while (!fringe.isEmpty()) {
+            String curr = fringe.poll();
+            ancestors.add(curr);
+            // continue through curr's parents
+            Commit commit = Commit.fromFile(curr);
+            if (commit == null) {
+                throw error("can not get commit %curr", curr);
+            }
+            List<String> parents = commit.getParent();
+            if (parents == null) continue;
+            for (String item : parents) {
+                if (!ancestors.contains(item)) {
+                    fringe.add(item);
+                }
+            }
+        }
+        // 2.遍历commitID2的parent，找到最近的共同的parent
+        fringe.clear();
+        fringe.add(commitID2);
+        // 还需要一个 visited 集合防止 Given 分支自己有环（虽然 Git 不会有环）或者重复访问
+        Set<String> visited = new HashSet<>();
+        while (!fringe.isEmpty()) {
+            String curr = fringe.poll();
+            visited.add(curr);// 标记访问过的
+            // =====核心判断逻辑=======
+            if (ancestors.contains(curr)) {
+                return curr;
+            }
+            // 把parent加入队列
+            Commit commit = Commit.fromFile(curr);
+            if (commit == null) {
+                throw error("can not get commit %curr", curr);
+            }
+            List<String> parents = commit.getParent();
+            if (parents == null) continue;
+            for (String parent : parents) {
+                if (!visited.contains(parent)) {
+                    fringe.add(parent);
+                }
+            }
+        }
+        return null;
+    }
 }
+
