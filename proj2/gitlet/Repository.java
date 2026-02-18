@@ -7,10 +7,8 @@ import java.util.*;
 
 import static gitlet.Utils.*;
 
-// TODO: any imports you need here
 
 /** Represents a gitlet repository.
- *  TODO: It's a good idea to give a description here of what else this Class
  *  此处用于存放一些函数操作，如init以保证Main中代码的简洁。
  *  does at a high level.
  *
@@ -18,7 +16,6 @@ import static gitlet.Utils.*;
  */
 public class Repository {
     /**
-     * TODO: add instance variables here.
      * 1
      * List all instance variables of the Repository class here with a useful
      * comment above them describing what that variable represents and how that
@@ -30,7 +27,6 @@ public class Repository {
     /** The .gitlet directory. */
     public static final File GITLET_DIR = join(CWD, ".gitlet");
 
-    /* TODO: fill in the rest of this class. */
     /** The object directory*/
     public static final File OBJECT_DIR = join(GITLET_DIR, "objects");
     /** The refs directory */
@@ -556,7 +552,8 @@ public class Repository {
         if (currBranch.equals(branchName)) {
             throw error("Cannot remove the current branch.");
         }
-        Utils.restrictedDelete(branchFile);
+//        Utils.restrictedDelete(branchFile);
+        branchFile.delete();
 
     }
 
@@ -650,8 +647,8 @@ public class Repository {
         }
         for (String file : cwdFile) {
             if (!currMap.containsKey(file) && givenMap.containsKey(file)) {
-                throw error("There is an untracked file in the way;" +
-                        " delete it, or add and commit it first.");
+                throw error("There is an untracked file in the way;"
+                        + " delete it, or add and commit it first.");
             }
         }
 
@@ -692,10 +689,13 @@ public class Repository {
                 }
                 if (gHash != null) {
                     Blob b2 = Blob.fromFile(gHash);
-                    if (b2 != null) givenBranchContent = new String(b2.getFileContent());
+                    if (b2 != null) {
+                        givenBranchContent = new String(b2.getFileContent());
+                    }
                 }
 
-                String newContent = "<<<<<<< HEAD\n" + currBranchContent + "\n" + "=======\n" + givenBranchContent + "\n" + ">>>>>>>";
+                String newContent = "<<<<<<< HEAD\n" + currBranchContent
+                        + "=======\n" + givenBranchContent + ">>>>>>>";
                 File newFile = join(CWD, file);
                 writeContents(newFile, newContent);
                 add(file);
@@ -839,11 +839,11 @@ public class Repository {
         if (fileName != null) {
             for (String item : fileName) {
                 boolean inTarget = targetCommitFileMap.containsKey(item);
-                boolean InCurr = currCommitFileMap.containsKey(item);
+                boolean inCurr = currCommitFileMap.containsKey(item);
                 boolean inStage = addMap.containsKey(item);
-                if (inTarget && !InCurr && !inStage) {
-                    throw error("There is an untracked file in the way;" +
-                            " delete it, or add and commit it first.");
+                if (inTarget && !inCurr && !inStage) {
+                    throw error("There is an untracked file in the way;"
+                            + " delete it, or add and commit it first.");
                 }
             }
         }

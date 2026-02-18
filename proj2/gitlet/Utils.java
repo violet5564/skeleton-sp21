@@ -235,6 +235,6 @@ class Utils {
     static void message(String msg, Object... args) {
 //        System.out.printf(msg, args);
 //        System.out.println();
-        System.out.printf(msg, args + "\n");
+        System.out.print(String.format(msg, args) + "\n");
     }
 }
