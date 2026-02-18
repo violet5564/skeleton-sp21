@@ -21,14 +21,14 @@ public class Blob implements Serializable {
     }
 
     /**从给定目录读取文件
-     * @param BlobHash Blob文件的哈希值
+     * @param blobHash Blob文件的哈希值
      */
-    public static Blob fromFile(String BlobHash) {
-        File BlobFile = join(OBJECT_DIR, BlobHash);
-        if (!BlobFile.exists()) {
+    public static Blob fromFile(String blobHash) {
+        File blobFile = join(OBJECT_DIR, blobHash);
+        if (!blobFile.exists()) {
             return null;
         }
-        return readObject(BlobFile, Blob.class);
+        return readObject(blobFile, Blob.class);
     }
 
     public String generateID() {

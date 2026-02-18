@@ -36,7 +36,7 @@ public class Repository {
     /** The HEAD file */
     public static final File HEAD_F = join(GITLET_DIR, "HEAD");
     /** The stage file */
-    public static final File stage_FILE = join(GITLET_DIR, "stage");
+    public static final File STAGE_FILE = join(GITLET_DIR, "stage");
     /**
      Creates a new Gitlet version-control system in the current directory.
      This system will automatically start with one commit: a commit that contains
@@ -64,7 +64,7 @@ public class Repository {
         // create HEAD_F
         mkfile(HEAD_F);
         // create stageFile
-        mkfile(stage_FILE);
+        mkfile(STAGE_FILE);
         /** ==第二部创建initialCommit== */
         //initialize timestamp in commit class
         Commit initalCommit = new Commit("initial commit", new ArrayList<>(), new HashMap<>());
@@ -581,77 +581,35 @@ public class Repository {
      * @param branchName given branch
      */
     public static void merge(String branchName) {
-        //1. failure case
-        // 1.1 stage不为空报错
+        //1. Failure Cases
         Stage stage = Stage.readStage();
-        if (!stage.getAddFile().isEmpty() || !stage.getRemoveFile().isEmpty()) {
-            throw error("You have uncommitted changes.");
-        }
-        // 1.2 Given branch不存在报错
-        File branchFile = join(HEADS_DIR, branchName);
-        if (!branchFile.exists()) {
-            throw error("A branch with that name does not exist.");
-        }
-        // 1.3 试图merge自己，报错
-        String currBranch = readContentsAsString(HEAD_F);
-        if (currBranch.equals(branchName)) {
-            throw error("Cannot merge a branch with itself.");
-        }
-        // 1.4 untracked file 要被deleted or overwriten
-
-        // 2. 使用BFS找到split point
+        checkMergeConditions(branchName, stage);
+        // 2. prepare data(使用BFS找到split point)
         // 获取curr branch commit and given branch commit
         String currCommit = getHeadCommitID();
+        File branchFile = join(HEADS_DIR, branchName);
         String givenCommit = readContentsAsString(branchFile);
         String splitPoint = findSplitPoint(currCommit, givenCommit);
-
         // 获取split point 之后处理错误情况
-        if (Objects.equals(splitPoint, givenCommit)) {
-            throw error("Given branch is an ancestor of the current branch.");
-        }
-        if (Objects.equals(currCommit, splitPoint)) {
-            checkoutBranch(branchName);
-            message("Current branch fast-forwarded.");
-            return;
-        }
-
+        checkSplitPoint(splitPoint, givenCommit, currCommit, branchName);
         // 获取三个commit的HashMap用于后续的文件操作
         Commit curr = Commit.fromFile(currCommit);
-        if (curr == null) {
-            throw error("读取commit%s失败", curr);
-        }
+        if (curr == null) { throw error("读取commit%s失败", curr); }
         HashMap<String, String> currMap = curr.getFileMap();
         Commit given = Commit.fromFile(givenCommit);
-        if (given == null) {
-            throw error("读取commit%s失败", given);
-        }
+        if (given == null) { throw error("读取commit%s失败", given); }
         HashMap<String, String> givenMap = given.getFileMap();
         Commit split = Commit.fromFile(splitPoint);
-        if (split == null) {
-            throw error("读取commit%s失败", split);
-        }
+        if (split == null) { throw error("读取commit%s失败", split); }
         HashMap<String, String>  sMap = split.getFileMap();
-
         // 3.构造文件并集
         // 获取迭代文件列表split + given + curr(CWD的untracked怎么说?)
         HashSet<String> allFile = new HashSet<>();
         allFile.addAll(curr.getFileMap().keySet());
         allFile.addAll(given.getFileMap().keySet());
         allFile.addAll(split.getFileMap().keySet());
-
         // 4. 检测untracked file
-        // 遍历CWD中的文件，如果untracked,且givenMap中有，报错。（这是更宽泛的条件，可以更严格）
-        List<String> cwdFile = Utils.plainFilenamesIn(CWD);
-        if (cwdFile == null) {
-            throw error("读取CWD失败"); //防御性检测
-        }
-        for (String file : cwdFile) {
-            if (!currMap.containsKey(file) && givenMap.containsKey(file)) {
-                throw error("There is an untracked file in the way;"
-                        + " delete it, or add and commit it first.");
-            }
-        }
-
+        checkUntrackedInMerge(currMap, givenMap);
         // 5. 核心循环(get返回的结果是空怎么办？即不存在当前commit,应该也没关系把)
         for (String file : allFile) {
             String sHash = sMap.get(file);
@@ -667,12 +625,6 @@ public class Repository {
                 } else {
                     rm(file);
                 }
-//             下面的情况都不需要操作因此直接忽略
-//            } else if (Objects.equals(sHash, gHash) && !Objects.equals(sHash, cHash)) {
-//                // 5.2given没改，curr改了
-//                // 5.4 只在curr中删除
-//                // do nothing
-//            } else if (!Objects.equals(sHash, cHash) && Objects.equals(cHash, gHash)) {
 //                // 5.3 修改内容一样，什么也不变。
             } else if (!Objects.equals(sHash, cHash) && !Objects.equals(sHash, gHash) && !Objects.equals(cHash, gHash)) {
                 // curr和given都和split不一样，冲突！
@@ -680,7 +632,7 @@ public class Repository {
 
                 String currBranchContent = "";
                 String givenBranchContent = "";
-                if (cHash != null) { // ✅ 先检查 null
+                if (cHash != null) { //  先检查 null
                     // 最好封装一个 Blob.getContentAsString(hash)
                     Blob b = Blob.fromFile(cHash);
                     if (b != null) {
@@ -693,18 +645,15 @@ public class Repository {
                         givenBranchContent = new String(b2.getFileContent());
                     }
                 }
-
                 String newContent = "<<<<<<< HEAD\n" + currBranchContent
-                        + "=======\n" + givenBranchContent + ">>>>>>>";
+                        + "=======\n" + givenBranchContent + ">>>>>>>\n";
                 File newFile = join(CWD, file);
-                writeContents(newFile, newContent);
+                writeContents(newFile, newContent.replace("\r\n", "\n"));
                 add(file);
             }
         }
-
-
         // 6. commit
-        makeCommit("Merged " + branchName + " into " + currBranch + ".", givenCommit);
+        makeCommit("Merged " + branchName + " into " + readContentsAsString(HEAD_F) + ".", givenCommit);
     }
 
 //    =========================================
@@ -927,6 +876,54 @@ public class Repository {
             }
         }
         return null;
+    }
+
+    /**
+     * 帮助merge命令完成一些错误情况的检查
+     * @param branchName the name of another branch ot be merged
+     * @param stage the name of current stage object
+     */
+    private static void checkMergeConditions(String branchName, Stage stage) {
+        // 1.1 stage 不为空
+        if (!stage.getAddFile().isEmpty() || !stage.getRemoveFile().isEmpty()) {
+            throw error("You have uncommitted changes.");
+        }
+        // 1.2 Given branch不存在报错
+        File branchFile = join(HEADS_DIR, branchName);
+        if (!branchFile.exists()) {
+            throw error("A branch with that name does not exist.");
+        }
+        // 1.3 试图merge自己，报错
+        String currBranch = readContentsAsString(HEAD_F);
+        if (currBranch.equals(branchName)) {
+            throw error("Cannot merge a branch with itself.");
+        }
+    }
+
+    private static void checkSplitPoint(String splitPoint, String givenCommit, String currCommit, String branchName) {
+        if (Objects.equals(splitPoint, givenCommit)) {
+            throw error("Given branch is an ancestor of the current branch.");
+        }
+        if (Objects.equals(currCommit, splitPoint)) {
+            checkoutBranch(branchName);
+            message("Current branch fast-forwarded.");
+            return;
+        }
+    }
+
+    /**
+     * 检查 Untracked Files
+     * 遍历CWD中的文件，如果untracked,且givenMap中有，报错。（这是更宽泛的条件，可以更严格）
+     */
+    private static void checkUntrackedInMerge(Map<String, String> currMap, Map<String, String> givenMap) {
+        List<String> cwdFiles = Utils.plainFilenamesIn(CWD);
+        if (cwdFiles == null) return;
+
+        for (String file : cwdFiles) {
+            if (!currMap.containsKey(file) && givenMap.containsKey(file)) {
+                throw error("There is an untracked file in the way; delete it, or add and commit it first.");
+            }
+        }
     }
 }
 

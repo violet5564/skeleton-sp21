@@ -66,13 +66,13 @@ public class Stage implements Serializable {
     }
     // 从文件中读取Stage类
     public static Stage readStage() {
-        if (!stage_FILE.exists()) {
+        if (!STAGE_FILE.exists()) {
             System.exit(0);
         }
-        return readObject(stage_FILE, Stage.class);
+        return readObject(STAGE_FILE, Stage.class);
     }
     // 将Stage对象写入文件
     public void saveStage() {
-        writeObject(stage_FILE, this);
+        writeObject(STAGE_FILE, this);
     }
 }
