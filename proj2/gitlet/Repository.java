@@ -93,7 +93,7 @@ public class Repository {
      * @param f 文件目录
      */
     private static void mkdir(File f) {
-        if(!f.exists()) {
+        if (!f.exists()) {
             f.mkdir();
         }
     }
@@ -163,7 +163,7 @@ public class Repository {
         //    - 清空 Stage (创建一个新的空 Stage 并保存)
         String newCommitID = newCommit.generateID();
         newCommit.saveCommit(newCommitID);
-        String branchName = readContentsAsString(HEAD_F).trim();//获取当前分支
+        String branchName = readContentsAsString(HEAD_F).trim(); //获取当前分支
         File branchFile = Utils.join(HEADS_DIR, branchName);
         writeContents(branchFile, newCommitID);
         stage.clear();
@@ -222,7 +222,7 @@ public class Repository {
         //    - 清空 Stage (创建一个新的空 Stage 并保存)
         String newCommitID = newCommit.generateID();
         newCommit.saveCommit(newCommitID);
-        String branchName = readContentsAsString(HEAD_F).trim();//获取当前分支
+        String branchName = readContentsAsString(HEAD_F).trim(); //获取当前分支
         File branchFile = Utils.join(HEADS_DIR, branchName);
         writeContents(branchFile, newCommitID);
         stage.clear();
@@ -235,7 +235,7 @@ public class Repository {
     public static void add(String fileName) {
         // 1.读取文件
         File addFile = join(CWD, fileName);
-        if(!addFile.exists()) {
+        if (!addFile.exists()) {
             throw error("File does not exit");
         }
         // 2.计算文件的SHA-1
@@ -256,7 +256,7 @@ public class Repository {
         String commitBlobHash = commit.getFileHash(fileName);
 
         // 6. 如果add的文件和commit中的文件相同,将其从Staging area移除
-        if(commitBlobHash != null && commitBlobHash.equals(currBlobHash)) {
+        if (commitBlobHash != null && commitBlobHash.equals(currBlobHash)) {
             stage.unstageAdd(fileName);
             stage.unstageRemove(fileName);
         } else {
@@ -292,7 +292,7 @@ public class Repository {
         if (currCommit == null) {
             System.exit(0);
         }
-        HashMap<String, String> fileMap = currCommit.getFileMap();//fileMap不会是null,只会为空
+        HashMap<String, String> fileMap = currCommit.getFileMap(); //fileMap不会是null,只会为空
 
         // 2.If the file is neither staged nor tracked by the head commit,
         // print the error message No reason to remove the file.
@@ -332,11 +332,11 @@ public class Repository {
         }
         // 迭代并打印
         while (curr != null) {
-            System.out.println("===");
-            System.out.println("commit " + commitID);
-            System.out.println("Date: " + curr.getTimestamp());
-            System.out.println(curr.getMessage());
-            System.out.println();
+            System.out.print("===\n");
+            System.out.print("commit " + commitID + "\n");
+            System.out.print("Date: " + curr.getTimestamp() + "\n");
+            System.out.print(curr.getMessage() + "\n");
+            System.out.print("\n"); // 打印空行
             // 获取parentID
             List<String> parents = curr.getParent();
             // 如果curr为inital commit
@@ -369,7 +369,7 @@ public class Repository {
                 // 这样无论是 Blob 还是 Commit 都能读出来，不会报错
                 Serializable obj = Utils.readObject(file, Serializable.class);
                 if (obj instanceof Commit) {
-                    Commit commits = (Commit)obj;
+                    Commit commits = (Commit) obj;
                     printLog(commits, item);
                 }
             } catch (IllegalArgumentException e) {
@@ -403,7 +403,7 @@ public class Repository {
                 // 这样无论是 Blob 还是 Commit 都能读出来，不会报错
                 Serializable obj = Utils.readObject(file, Serializable.class);
                 if (obj instanceof Commit) {
-                    Commit curr = (Commit)obj;
+                    Commit curr = (Commit) obj;
                     // 遍历所有commit,message符合就输出id
                     if (curr.getMessage().equals(message)) {
                         found = true;
@@ -499,8 +499,10 @@ public class Repository {
      */
     public static void checkoutCommitFile(String commitID, String file) {
         // 1.根据ID获取commit对象
-         String fullID = resolveCommitID(commitID);
-         if (fullID == null) throw error("No commit with that id exists.");
+        String fullID = resolveCommitID(commitID);
+        if (fullID == null) {
+            throw error("No commit with that id exists.");
+        }
         Commit curr = Commit.fromFile(fullID);
         if (curr == null) {
             throw error("No commits with this id exits.");
@@ -527,7 +529,7 @@ public class Repository {
      * Creates a new branch with the given name, and points it at the current head commit.
      * @param branchName the new branch name
      */
-    public static void branch (String branchName) {
+    public static void branch(String branchName) {
         // 在HEADS文件夹中创建分支文件，名字是分支名
         File branchFile = join(HEADS_DIR, branchName);
         if (branchFile.exists()) {
@@ -544,7 +546,7 @@ public class Repository {
      * Deletes the branch with the given name.
      * @param branchName the branch need to be deleted
      */
-    public static void rmBranch (String branchName) {
+    public static void rmBranch(String branchName) {
         File branchFile = join(HEADS_DIR, branchName);
         if (!branchFile.exists()) {
             throw error("A branch with that name does not exist.");
@@ -554,7 +556,7 @@ public class Repository {
         if (currBranch.equals(branchName)) {
             throw error("Cannot remove the current branch.");
         }
-         Utils.restrictedDelete(branchFile);
+        Utils.restrictedDelete(branchFile);
 
     }
 
@@ -562,7 +564,7 @@ public class Repository {
      *将版本回滚到指定的commitID处
      * @param commitID 给定的commit的哈希值
      */
-    public static void reset (String commitID) {
+    public static void reset(String commitID) {
         //处理缩写hash
         String fullCommitID = resolveCommitID(commitID);
         //核心处理逻辑
@@ -581,7 +583,7 @@ public class Repository {
      * Merges files from the given branch into the current branch.
      * @param branchName given branch
      */
-    public static void merge (String branchName) {
+    public static void merge(String branchName) {
         //1. failure case
         // 1.1 stage不为空报错
         Stage stage = Stage.readStage();
@@ -618,13 +620,19 @@ public class Repository {
 
         // 获取三个commit的HashMap用于后续的文件操作
         Commit curr = Commit.fromFile(currCommit);
-        if (curr == null) throw error("读取commit%s失败", curr);
+        if (curr == null) {
+            throw error("读取commit%s失败", curr);
+        }
         HashMap<String, String> currMap = curr.getFileMap();
         Commit given = Commit.fromFile(givenCommit);
-        if (given == null) throw error("读取commit%s失败", given);
+        if (given == null) {
+            throw error("读取commit%s失败", given);
+        }
         HashMap<String, String> givenMap = given.getFileMap();
         Commit split = Commit.fromFile(splitPoint);
-        if (split == null) throw error("读取commit%s失败", split);
+        if (split == null) {
+            throw error("读取commit%s失败", split);
+        }
         HashMap<String, String>  sMap = split.getFileMap();
 
         // 3.构造文件并集
@@ -637,10 +645,13 @@ public class Repository {
         // 4. 检测untracked file
         // 遍历CWD中的文件，如果untracked,且givenMap中有，报错。（这是更宽泛的条件，可以更严格）
         List<String> cwdFile = Utils.plainFilenamesIn(CWD);
-        if (cwdFile == null) throw error("读取CWD失败");//防御性检测
+        if (cwdFile == null) {
+            throw error("读取CWD失败"); //防御性检测
+        }
         for (String file : cwdFile) {
             if (!currMap.containsKey(file) && givenMap.containsKey(file)) {
-                throw error("There is an untracked file in the way; delete it, or add and commit it first.");
+                throw error("There is an untracked file in the way;" +
+                        " delete it, or add and commit it first.");
             }
         }
 
@@ -666,10 +677,7 @@ public class Repository {
 //                // do nothing
 //            } else if (!Objects.equals(sHash, cHash) && Objects.equals(cHash, gHash)) {
 //                // 5.3 修改内容一样，什么也不变。
-            } else if (!Objects.equals(sHash, cHash) &&
-                    !Objects.equals(sHash, gHash) &&
-                    !Objects.equals(cHash, gHash)
-            ) {
+            } else if (!Objects.equals(sHash, cHash) && !Objects.equals(sHash, gHash) && !Objects.equals(cHash, gHash)) {
                 // curr和given都和split不一样，冲突！
                 message("Encountered a merge conflict.");
 
@@ -678,7 +686,9 @@ public class Repository {
                 if (cHash != null) { // ✅ 先检查 null
                     // 最好封装一个 Blob.getContentAsString(hash)
                     Blob b = Blob.fromFile(cHash);
-                    if (b != null) currBranchContent = new String(b.getFileContent()); // 注意 byte[] 转 String
+                    if (b != null) {
+                        currBranchContent = new String(b.getFileContent()); // 注意 byte[] 转 String
+                    }
                 }
                 if (gHash != null) {
                     Blob b2 = Blob.fromFile(gHash);
@@ -726,7 +736,7 @@ public class Repository {
         File branchFile = Utils.join(HEADS_DIR, branchName);
 
         //3. 读取文件中的哈希hi
-        if(!branchFile.exists()) {
+        if (!branchFile.exists()) {
             return null; //防御性检查
         }
         return readContentsAsString(branchFile).trim();
@@ -812,7 +822,7 @@ public class Repository {
         // 1.获取相关文件列表
         //获取目标commit的fileMap
         Commit targetCommit = Commit.fromFile(targetCommitID);
-        if (targetCommit == null) {//防御性检测
+        if (targetCommit == null) { //防御性检测
             throw error("No commit with that id exists.");
         }
         HashMap<String, String> targetCommitFileMap = targetCommit.getFileMap();
@@ -827,18 +837,19 @@ public class Repository {
         HashMap<String, String> addMap = stage.getAddFile();
         List<String> fileName = Utils.plainFilenamesIn(CWD);
         if (fileName != null) {
-            for(String item : fileName) {
+            for (String item : fileName) {
                 boolean inTarget = targetCommitFileMap.containsKey(item);
                 boolean InCurr = currCommitFileMap.containsKey(item);
                 boolean inStage = addMap.containsKey(item);
                 if (inTarget && !InCurr && !inStage) {
-                    throw error("There is an untracked file in the way; delete it, or add and commit it first.");
+                    throw error("There is an untracked file in the way;" +
+                            " delete it, or add and commit it first.");
                 }
             }
         }
 
         //2. 覆盖文件
-        for (String blobName : targetCommitFileMap.keySet()) {//遍历所有的blob name
+        for (String blobName : targetCommitFileMap.keySet()) { //遍历所有的blob name
             String blobHash = targetCommitFileMap.get(blobName); //得到blob的Hash
             Blob blob = Blob.fromFile(blobHash);
             if (blob == null) {
@@ -879,7 +890,9 @@ public class Repository {
                 throw error("can not get commit %curr", curr);
             }
             List<String> parents = commit.getParent();
-            if (parents == null) continue;
+            if (parents == null) {
+                continue;
+            }
             for (String item : parents) {
                 if (!ancestors.contains(item)) {
                     fringe.add(item);
@@ -893,7 +906,7 @@ public class Repository {
         Set<String> visited = new HashSet<>();
         while (!fringe.isEmpty()) {
             String curr = fringe.poll();
-            visited.add(curr);// 标记访问过的
+            visited.add(curr); // 标记访问过的
             // =====核心判断逻辑=======
             if (ancestors.contains(curr)) {
                 return curr;
@@ -904,7 +917,9 @@ public class Repository {
                 throw error("can not get commit %curr", curr);
             }
             List<String> parents = commit.getParent();
-            if (parents == null) continue;
+            if (parents == null) {
+                continue;
+            }
             for (String parent : parents) {
                 if (!visited.contains(parent)) {
                     fringe.add(parent);

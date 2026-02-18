@@ -233,7 +233,8 @@ class Utils {
     /** Print a message composed from MSG and ARGS as for the String.format
      *  method, followed by a newline. */
     static void message(String msg, Object... args) {
-        System.out.printf(msg, args);
-        System.out.println();
+//        System.out.printf(msg, args);
+//        System.out.println();
+        System.out.printf(msg, args + "\n");
     }
 }

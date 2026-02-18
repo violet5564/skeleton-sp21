@@ -1,6 +1,5 @@
 package gitlet;
 
-import java.io.File;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -19,7 +18,7 @@ public class Stage implements Serializable {
     // 再加一个clean方法
 
 
-    private HashMap<String,String> addFile; //文件名 ->blob Hash
+    private HashMap<String, String> addFile; //文件名 ->blob Hash
     // remove只需要文件，不需要hash
     private HashSet<String> removeFile;
 
@@ -59,10 +58,10 @@ public class Stage implements Serializable {
     }
 
 
-    public HashMap<String, String> getAddFile(){
+    public HashMap<String, String> getAddFile() {
         return this.addFile;
     }
-    public HashSet<String> getRemoveFile(){
+    public HashSet<String> getRemoveFile() {
         return this.removeFile;
     }
     // 从文件中读取Stage类

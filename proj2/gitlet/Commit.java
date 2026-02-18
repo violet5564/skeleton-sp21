@@ -1,7 +1,5 @@
 package gitlet;
 
-// TODO: any imports you need here
-
 import java.io.File;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
@@ -11,7 +9,6 @@ import static gitlet.Repository.*;
 import static gitlet.Utils.*;
 
 /** Represents a gitlet commit object.
- *  TODO: It's a good idea to give a description here of what else this Class
  *  this class represent a commit object in gitlet
  *  does at a high level.
  *
@@ -19,7 +16,6 @@ import static gitlet.Utils.*;
  */
 public class Commit implements Serializable {
     /**
-     * TODO: add instance variables here.
      * log massage, other matedata(commit date, author, etc), a reference to a tree,
      * references to parent commits
      * List all instance variables of the Commit class here with a useful
@@ -34,7 +30,7 @@ public class Commit implements Serializable {
     // commit追踪的文件
     private HashMap<String, String> fileMap; // 文件名-> Blob Hash
 
-    /* TODO: fill in the rest of this class. */
+
     /**
      * Initialize commit object
      * @param message 接受命令行的消息
@@ -58,7 +54,8 @@ public class Commit implements Serializable {
      * @return 该commit对象的commitID
      */
     public String generateID() {
-        return Utils.sha1(this.message, this.timestamp, this.parents.toString(), this.fileMap.toString());
+        return Utils.sha1(this.message, this.timestamp,
+                this.parents.toString(), this.fileMap.toString());
     }
 
     // 用于返回指定git格式的日期
@@ -71,7 +68,7 @@ public class Commit implements Serializable {
         // HH:mm:ss = 时分秒
         // yyyy = 年
         // Z = 时区 (-0800)
-        SimpleDateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy  Z", Locale.US);
+        SimpleDateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy Z", Locale.US);
         return dateFormat.format(date);
     }
 
