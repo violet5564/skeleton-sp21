@@ -501,7 +501,7 @@ public class Repository {
         }
         Commit curr = Commit.fromFile(fullID);
         if (curr == null) {
-            throw error("No commits with this id exits.");
+            throw error("No commit with that id exists.");
         }
 
         // 2.读取Blob对象,处理failure case
@@ -594,29 +594,32 @@ public class Repository {
         checkSplitPoint(splitPoint, givenCommit, currCommit, branchName);
         // 获取三个commit的HashMap用于后续的文件操作
         Commit curr = Commit.fromFile(currCommit);
-        if (curr == null) { throw error("读取commit%s失败", curr); }
+        if (curr == null) {
+            throw error("读取commit%s失败", curr);
+        }
         HashMap<String, String> currMap = curr.getFileMap();
         Commit given = Commit.fromFile(givenCommit);
-        if (given == null) { throw error("读取commit%s失败", given); }
+        if (given == null) {
+            throw error("读取commit%s失败", given);
+        }
         HashMap<String, String> givenMap = given.getFileMap();
         Commit split = Commit.fromFile(splitPoint);
-        if (split == null) { throw error("读取commit%s失败", split); }
+        if (split == null) {
+            throw error("读取commit%s失败", split);
+        }
         HashMap<String, String>  sMap = split.getFileMap();
-        // 3.构造文件并集
-        // 获取迭代文件列表split + given + curr(CWD的untracked怎么说?)
+        // 3.构造文件并集;获取迭代文件列表split + given + curr(CWD的untracked怎么说?)
         HashSet<String> allFile = new HashSet<>();
         allFile.addAll(curr.getFileMap().keySet());
         allFile.addAll(given.getFileMap().keySet());
         allFile.addAll(split.getFileMap().keySet());
         // 4. 检测untracked file
-        checkUntrackedInMerge(currMap, givenMap);
+        checkUntracked(currMap, givenMap);
         // 5. 核心循环(get返回的结果是空怎么办？即不存在当前commit,应该也没关系把)
         for (String file : allFile) {
             String sHash = sMap.get(file);
             String cHash = currMap.get(file);
             String gHash = givenMap.get(file);
-            // 5.1 given改了或者删了，curr没改
-            //5.5 只在given中删除
             // 此处使用object.equals来避免NPE报错
             if (Objects.equals(sHash, cHash) && !Objects.equals(sHash, gHash)) {
                 if (gHash != null) {
@@ -625,8 +628,9 @@ public class Repository {
                 } else {
                     rm(file);
                 }
-//                // 5.3 修改内容一样，什么也不变。
-            } else if (!Objects.equals(sHash, cHash) && !Objects.equals(sHash, gHash) && !Objects.equals(cHash, gHash)) {
+                // 5.3 修改内容一样，什么也不变。
+            } else if (!Objects.equals(sHash, cHash) &&
+                    !Objects.equals(sHash, gHash) && !Objects.equals(cHash, gHash)) {
                 // curr和given都和split不一样，冲突！
                 message("Encountered a merge conflict.");
 
@@ -648,7 +652,7 @@ public class Repository {
                 String newContent = "<<<<<<< HEAD\n" + currBranchContent
                         + "=======\n" + givenBranchContent + ">>>>>>>\n";
                 File newFile = join(CWD, file);
-                writeContents(newFile, newContent.replace("\r\n", "\n"));
+                writeContents(newFile, newContent);
                 add(file);
             }
         }
@@ -906,8 +910,7 @@ public class Repository {
         }
         if (Objects.equals(currCommit, splitPoint)) {
             checkoutBranch(branchName);
-            message("Current branch fast-forwarded.");
-            return;
+            throw error("Current branch fast-forwarded.");
         }
     }
 
@@ -915,13 +918,16 @@ public class Repository {
      * 检查 Untracked Files
      * 遍历CWD中的文件，如果untracked,且givenMap中有，报错。（这是更宽泛的条件，可以更严格）
      */
-    private static void checkUntrackedInMerge(Map<String, String> currMap, Map<String, String> givenMap) {
+    private static void checkUntracked(Map<String, String> currMap, Map<String, String> givenMap) {
         List<String> cwdFiles = Utils.plainFilenamesIn(CWD);
-        if (cwdFiles == null) return;
+        if (cwdFiles == null) {
+            return;
+        }
 
         for (String file : cwdFiles) {
             if (!currMap.containsKey(file) && givenMap.containsKey(file)) {
-                throw error("There is an untracked file in the way; delete it, or add and commit it first.");
+                throw error("There is an untracked file in the way;" +
+                        " delete it, or add and commit it first.");
             }
         }
     }
