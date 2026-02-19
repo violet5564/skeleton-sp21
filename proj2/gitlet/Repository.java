@@ -629,8 +629,8 @@ public class Repository {
                     rm(file);
                 }
                 // 5.3 修改内容一样，什么也不变。
-            } else if (!Objects.equals(sHash, cHash) &&
-                    !Objects.equals(sHash, gHash) && !Objects.equals(cHash, gHash)) {
+            } else if (!Objects.equals(sHash, cHash)
+                    && !Objects.equals(sHash, gHash) && !Objects.equals(cHash, gHash)) {
                 // curr和given都和split不一样，冲突！
                 message("Encountered a merge conflict.");
 
@@ -657,7 +657,8 @@ public class Repository {
             }
         }
         // 6. commit
-        makeCommit("Merged " + branchName + " into " + readContentsAsString(HEAD_F) + ".", givenCommit);
+        makeCommit("Merged " + branchName
+                + " into " + readContentsAsString(HEAD_F) + ".", givenCommit);
     }
 
 //    =========================================
@@ -904,7 +905,8 @@ public class Repository {
         }
     }
 
-    private static void checkSplitPoint(String splitPoint, String givenCommit, String currCommit, String branchName) {
+    private static void checkSplitPoint(String splitPoint,
+                                        String givenCommit, String currCommit, String branchName) {
         if (Objects.equals(splitPoint, givenCommit)) {
             throw error("Given branch is an ancestor of the current branch.");
         }
@@ -926,8 +928,8 @@ public class Repository {
 
         for (String file : cwdFiles) {
             if (!currMap.containsKey(file) && givenMap.containsKey(file)) {
-                throw error("There is an untracked file in the way;" +
-                        " delete it, or add and commit it first.");
+                throw error("There is an untracked file in the way;"
+                        + " delete it, or add and commit it first.");
             }
         }
     }
